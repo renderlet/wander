@@ -1,5 +1,6 @@
 #pragma once
 
+#include <stack>
 #include <utility>
 #include <vector>
 
@@ -134,7 +135,28 @@ public:
 class Runtime : public IRuntime
 {
 public:
-	Runtime(Pal *pal);
+
+	struct Param
+	{
+		enum
+		{
+			Int32,
+			Int64,
+			Float32,
+			Float64
+		} Type;
+		union 
+		{
+			uint32_t Int32;
+			uint64_t Int64;
+			float Float32;
+			double Float64;
+		};
+	};
+
+	Runtime(Pal *pal) : m_pal(pal)
+	{
+	}
 
 	ObjectID LoadFromFile(std::string path) override;
 
@@ -150,6 +172,11 @@ public:
 	void DestroyRenderTree(ObjectID tree_id) override;
 
 	void Release() override;
+
+private:
+	std::vector<std::stack<Param>> m_params;
+
+	Pal *m_pal;
 };
 
 class Factory
