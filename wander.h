@@ -1,14 +1,21 @@
 #pragma once
 
-#include <stack>
+#include <queue>
 #include <utility>
 #include <vector>
 
+// TODO - this should only be a private dependency
+// Required for wasmtime (missing header)
+#include <string>
+#include "wasmtime.hh"
 
 struct ID3D11Device;
+struct ID3D11Buffer;
 
 namespace wander
 {
+
+typedef int ObjectID;
 
 enum class EPalType
 {
@@ -57,7 +64,7 @@ public:
 class Pal : public IPal
 {
 public:  // TODO" Replace with std::span
-	void CreateBuffer(BufferDescriptor desc, int length, uint8_t data[]);
+	virtual ObjectID CreateBuffer(BufferDescriptor desc, int length, uint8_t data[]) = 0;
 };
 
 
@@ -75,18 +82,30 @@ public:
 		return EPalType::D3D11;
 	}
 
+	ObjectID CreateBuffer(BufferDescriptor desc, int length, uint8_t data[]) override;
+
 private:
+	std::vector<ID3D11Buffer *> m_buffers;
+
 	ID3D11Device* m_device;
 };
-
-typedef int ObjectID;
 
 
 class RenderTreeNode
 {
 public:
+	RenderTreeNode(ObjectID buffer_id, std::string metadata, int offset, int length) :
+		m_buffer_id(buffer_id), m_metadata(std::move(metadata)),
+		m_offset(offset), m_length(length) { }
+
 	void Render();
 	std::string Metadata() const;
+
+private:
+	ObjectID m_buffer_id;
+	std::string m_metadata;
+	int m_offset;
+	int m_length;
 };
 
 
@@ -145,13 +164,14 @@ public:
 			Float32,
 			Float64
 		} Type;
+
 		union 
 		{
-			uint32_t Int32;
-			uint64_t Int64;
-			float Float32;
-			double Float64;
-		};
+			uint32_t I32;
+			uint64_t I64;
+			float F32;
+			double F64;
+		} Value;
 	};
 
 	Runtime(Pal *pal) : m_pal(pal)
@@ -174,7 +194,24 @@ public:
 	void Release() override;
 
 private:
-	std::vector<std::stack<Param>> m_params;
+
+	struct WasmtimeContext
+	{
+		wasm_engine_t* Engine = nullptr;
+		wasmtime_store_t* Store = nullptr;
+		wasmtime_context_t* Context = nullptr;
+		wasmtime_linker_t* Linker = nullptr;
+		wasmtime_module_t* Module = nullptr;
+		wasmtime_extern_t Run {};
+		wasmtime_extern_t Memory {};
+	};
+
+	wasm_engine_t *m_engine = nullptr;
+
+	std::vector<WasmtimeContext> m_contexts;
+	std::vector<std::queue<Param>> m_params;
+
+	std::vector<RenderTree> m_render_trees;
 
 	Pal *m_pal;
 };
