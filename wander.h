@@ -10,6 +10,7 @@
 #include "wasmtime.hh"
 
 struct ID3D11Device;
+struct ID3D11DeviceContext;
 struct ID3D11Buffer;
 
 namespace wander
@@ -44,7 +45,7 @@ public:
 	{
 	}
 
-	BufferType const Type()
+	BufferType Type() const
 	{
 		return m_type;
 	}
@@ -63,15 +64,19 @@ public:
 
 class Pal : public IPal
 {
-public:  // TODO" Replace with std::span
+public:  // TODO: Replace with std::span
 	virtual ObjectID CreateBuffer(BufferDescriptor desc, int length, uint8_t data[]) = 0;
+	virtual void DeleteBuffer(ObjectID buffer_id) = 0;
+
+	virtual void DrawTriangleList(ObjectID buffer_id, int offset, int length, unsigned int stride) = 0;
 };
 
 
 class PalD3D11 : public Pal
 {
 public:
-	PalD3D11(ID3D11Device* device) : m_device(device)
+	PalD3D11(ID3D11Device* device, ID3D11DeviceContext* context) :
+		m_device(device), m_device_context(context)
 	{
 	}
 
@@ -83,11 +88,15 @@ public:
 	}
 
 	ObjectID CreateBuffer(BufferDescriptor desc, int length, uint8_t data[]) override;
+	void DeleteBuffer(ObjectID buffer_id) override;
+
+	void DrawTriangleList(ObjectID buffer_id, int offset, int length, unsigned int stride) override;
 
 private:
-	std::vector<ID3D11Buffer *> m_buffers;
+	std::vector<ID3D11Buffer*> m_buffers;
 
 	ID3D11Device* m_device;
+	ID3D11DeviceContext* m_device_context;
 };
 
 
@@ -98,8 +107,15 @@ public:
 		m_buffer_id(buffer_id), m_metadata(std::move(metadata)),
 		m_offset(offset), m_length(length) { }
 
-	void Render();
+	void RenderFixedStride(IPal* pal, unsigned int stride) const;
+
 	std::string Metadata() const;
+
+	// This should be private
+	ObjectID BufferID() const
+	{
+		return m_buffer_id;
+	}
 
 private:
 	ObjectID m_buffer_id;
@@ -121,6 +137,11 @@ public:
 	const RenderTreeNode* NodeAt(int index) const
 	{
 		return &m_nodes[index]; // bounds check
+	}
+
+	void Clear()
+	{
+		m_nodes.clear();
 	}
 
 	int Length() const

@@ -61,19 +61,48 @@ ObjectID PalD3D11::CreateBuffer(BufferDescriptor desc, int length, uint8_t data[
 	D3D11_BUFFER_DESC vbd;
 	vbd.Usage = D3D11_USAGE_IMMUTABLE;
 	vbd.ByteWidth = length;
-	vbd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 	vbd.CPUAccessFlags = 0;
 	vbd.MiscFlags = 0;
 	D3D11_SUBRESOURCE_DATA vinitData;
 	vinitData.pSysMem = data;
+
+	switch (desc.Type())
+	{
+	case BufferType::Vertex:
+		vbd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+		break;
+	case BufferType::Index:
+		vbd.BindFlags = D3D11_BIND_INDEX_BUFFER;
+		break;
+	case BufferType::Texture2D:
+		exit_with_error("Texture2D not supported in D3D11 Buffers", nullptr, nullptr);
+		break;
+	}
+
 	if (m_device->CreateBuffer(&vbd, &vinitData, &m_buffers.back()))
 		return -1;
 
 	return m_buffers.size() - 1;
 }
 
-void RenderTreeNode::Render()
+void PalD3D11::DeleteBuffer(ObjectID buffer_id)
 {
+	m_buffers[buffer_id]->Release();
+}
+
+void PalD3D11::DrawTriangleList(ObjectID buffer_id, int offset, int length, unsigned int stride)
+{
+	const UINT strides = stride;
+	constexpr UINT offsets = 0;
+
+	m_device_context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	m_device_context->IASetVertexBuffers(0, 1, &m_buffers[buffer_id], &strides, &offsets);
+	m_device_context->Draw(length, offset);
+}
+
+void RenderTreeNode::RenderFixedStride(IPal *pal, unsigned int stride) const
+{
+	static_cast<Pal *>(pal)->DrawTriangleList(m_buffer_id, m_offset, m_length, stride);
 }
 
 std::string RenderTreeNode::Metadata() const
@@ -287,8 +316,37 @@ const RenderTree* wander::Runtime::GetRenderTree(ObjectID tree_id)
 
 void wander::Runtime::DestroyRenderTree(ObjectID tree_id)
 {
+	for (auto i = 0; i < m_render_trees[tree_id].Length(); ++i)
+	{
+		const auto node = m_render_trees[tree_id].NodeAt(i);
+		m_pal->DeleteBuffer(node->BufferID());
+	}
+
+	m_render_trees[tree_id].Clear();
 }
 
 void wander::Runtime::Release()
 {
+	for (auto i = 0; i < m_render_trees.size(); ++i)
+	{
+		DestroyRenderTree(i);
+	}
+
+	m_render_trees.clear();
+
+	for (auto i = 0; i < m_contexts.size(); ++i)
+	{
+		ResetStack(i);
+
+		wasmtime_module_delete(m_contexts[i].Module);
+		wasmtime_store_delete(m_contexts[i].Store);
+		wasmtime_linker_delete(m_contexts[i].Linker);
+	}
+
+	m_contexts.clear();
+	m_params.clear();
+
+	wasm_engine_delete(m_engine);
+
+	m_pal->Release();
 }
