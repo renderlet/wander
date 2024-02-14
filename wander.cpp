@@ -100,9 +100,9 @@ void PalD3D11::DrawTriangleList(ObjectID buffer_id, int offset, int length, unsi
 	m_device_context->Draw(length, offset);
 }
 
-void RenderTreeNode::RenderFixedStride(IPal *pal, unsigned int stride) const
+void RenderTreeNode::RenderFixedStride(IRuntime* runtime, unsigned int stride) const
 {
-	static_cast<Pal *>(pal)->DrawTriangleList(m_buffer_id, m_offset, m_length, stride);
+	static_cast<Runtime*>(runtime)->PalImpl()->DrawTriangleList(m_buffer_id, m_offset, m_length, stride);
 }
 
 std::string RenderTreeNode::Metadata() const

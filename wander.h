@@ -15,8 +15,9 @@ struct ID3D11Buffer;
 
 namespace wander
 {
+	class IRuntime;
 
-typedef int ObjectID;
+	typedef int ObjectID;
 
 enum class EPalType
 {
@@ -107,7 +108,7 @@ public:
 		m_buffer_id(buffer_id), m_metadata(std::move(metadata)),
 		m_offset(offset), m_length(length) { }
 
-	void RenderFixedStride(IPal* pal, unsigned int stride) const;
+	void RenderFixedStride(IRuntime* runtime, unsigned int stride) const;
 
 	std::string Metadata() const;
 
@@ -214,6 +215,11 @@ public:
 
 	void Release() override;
 
+	Pal* PalImpl() const
+	{
+		return m_pal;
+	}
+
 private:
 
 	struct WasmtimeContext
@@ -234,7 +240,7 @@ private:
 
 	std::vector<RenderTree> m_render_trees;
 
-	Pal *m_pal;
+	Pal* m_pal;
 };
 
 class Factory
