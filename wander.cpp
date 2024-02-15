@@ -110,7 +110,7 @@ std::string RenderTreeNode::Metadata() const
 	return m_metadata;
 }
 
-ObjectID wander::Runtime::LoadFromFile(std::string path)
+ObjectID wander::Runtime::LoadFromFile(std::wstring path)
 {
 	auto context = WasmtimeContext{};
 
@@ -139,7 +139,7 @@ ObjectID wander::Runtime::LoadFromFile(std::string path)
 
 	wasm_byte_vec_t wasm;
 	// Load our input file to parse it next
-	FILE *file = fopen(path.c_str(), "rb");
+	FILE *file = _wfopen(path.c_str(), L"rb");
 	if (!file)
 	{
 		printf("> Error loading file!\n");

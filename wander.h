@@ -159,7 +159,7 @@ private:
 class IRuntime : public Object
 {
 public:
-	virtual ObjectID LoadFromFile(std::string path) = 0;
+	virtual ObjectID LoadFromFile(std::wstring path) = 0;
 
 	virtual void PushParam(ObjectID renderlet_id, float value) = 0;
 	virtual void PushParam(ObjectID renderlet_id, double value) = 0;
@@ -200,7 +200,7 @@ public:
 	{
 	}
 
-	ObjectID LoadFromFile(std::string path) override;
+	ObjectID LoadFromFile(std::wstring path) override;
 
 	void PushParam(ObjectID renderlet_id, float value) override;
 	void PushParam(ObjectID renderlet_id, double value) override;
