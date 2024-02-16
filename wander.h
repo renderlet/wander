@@ -1,5 +1,6 @@
 #pragma once
 
+#include <memory>
 #include <queue>
 #include <utility>
 #include <vector>
@@ -104,8 +105,8 @@ private:
 class RenderTreeNode
 {
 public:
-	RenderTreeNode(ObjectID buffer_id, std::string metadata, int offset, int length) :
-		m_buffer_id(buffer_id), m_metadata(std::move(metadata)),
+	RenderTreeNode(ObjectID buffer_id, const std::string& metadata, int offset, int length) :
+		m_buffer_id(buffer_id), m_metadata(metadata),
 		m_offset(offset), m_length(length) { }
 
 	void RenderFixedStride(IRuntime* runtime, unsigned int stride) const;
@@ -129,8 +130,8 @@ private:
 class RenderTree
 {
 public:
-	RenderTree(std::vector<RenderTreeNode> nodes) :
-		m_nodes(std::move(nodes))
+	RenderTree(const std::vector<RenderTreeNode> &nodes) :
+		m_nodes(nodes)
 	{
 
 	}
@@ -238,7 +239,7 @@ private:
 	std::vector<WasmtimeContext> m_contexts;
 	std::vector<std::queue<Param>> m_params;
 
-	std::vector<RenderTree> m_render_trees;
+	std::vector<std::unique_ptr<RenderTree>> m_render_trees;
 
 	Pal* m_pal;
 };

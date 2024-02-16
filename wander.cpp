@@ -126,9 +126,9 @@ ObjectID wander::Runtime::LoadFromFile(std::wstring path)
 	wasmtime_config_cranelift_debug_verifier_set(conf, false);
 
 	m_engine = wasm_engine_new_with_config(conf);
-	assert(engine != NULL);
+	assert(m_engine != NULL);
 	context.Store = wasmtime_store_new(m_engine, NULL, NULL);
-	assert(store != NULL);
+	assert(context.Store != NULL);
 	context.Context = wasmtime_store_context(context.Store);
 
 	// Create a linker with WASI functions defined
@@ -179,13 +179,15 @@ ObjectID wander::Runtime::LoadFromFile(std::wstring path)
 	if (error != NULL)
 		exit_with_error("failed to instantiate module", error, NULL);
 
-	if (!wasmtime_linker_get(context.Linker, context.Context, "", 0, "run3", 4, &context.Run))
+	if (!wasmtime_linker_get(context.Linker, context.Context, "", 0, "start", 5, &context.Run))
 		return -1;
 
 	if (!wasmtime_linker_get(context.Linker, context.Context, "", 0, "memory", 6, &context.Memory))
 		return -1;
 
-	m_contexts.emplace_back(std::move(context));
+	m_contexts.push_back(context);
+
+	m_params.push_back({});
 
 	return m_contexts.size() - 1;
 }
@@ -196,7 +198,7 @@ void wander::Runtime::PushParam(ObjectID renderlet_id, float value)
 	p.Type = Param::Float32;
 	p.Value.F32 = value;
 
-	m_params[renderlet_id].emplace(std::move(p));
+	m_params[renderlet_id].push(p);
 }
 
 void wander::Runtime::PushParam(ObjectID renderlet_id, double value)
@@ -205,7 +207,7 @@ void wander::Runtime::PushParam(ObjectID renderlet_id, double value)
 	p.Type = Param::Float64;
 	p.Value.F64 = value;
 
-	m_params[renderlet_id].emplace(std::move(p));
+	m_params[renderlet_id].push(p);
 }
 
 void wander::Runtime::PushParam(ObjectID renderlet_id, uint32_t value)
@@ -214,7 +216,7 @@ void wander::Runtime::PushParam(ObjectID renderlet_id, uint32_t value)
 	p.Type = Param::Int32;
 	p.Value.I32 = value;
 
-	m_params[renderlet_id].emplace(std::move(p));
+	m_params[renderlet_id].push(p);
 }
 
 void wander::Runtime::PushParam(ObjectID renderlet_id, uint64_t value)
@@ -223,12 +225,12 @@ void wander::Runtime::PushParam(ObjectID renderlet_id, uint64_t value)
 	p.Type = Param::Int64;
 	p.Value.I64 = value;
 
-	m_params[renderlet_id].emplace(std::move(p));
+	m_params[renderlet_id].push(p);
 }
 
 void wander::Runtime::ResetStack(ObjectID renderlet_id)
 {
-	m_params.clear();
+	m_params[renderlet_id] = {};
 }
 
 ObjectID wander::Runtime::Render(const ObjectID renderlet_id)
@@ -266,7 +268,9 @@ ObjectID wander::Runtime::Render(const ObjectID renderlet_id)
 
 	
 	wasm_trap_t *trap = nullptr;
-	wasmtime_error_t* error = wasmtime_func_call(context.Context, &context.Run.of.func, args.data(), 5, results, 1, &trap);
+	wasmtime_error_t *error =
+		wasmtime_func_call(context.Context, &context.Run.of.func, &args[0], args.size(), results, 1, &trap);
+
 	if (error != NULL || trap != NULL)
 		exit_with_error("failed to call run", error, trap);
 
@@ -288,6 +292,7 @@ ObjectID wander::Runtime::Render(const ObjectID renderlet_id)
 	auto mat = std::string(mats, mats + mat_length);
 
 	std::vector<RenderTreeNode> nodes;
+	
 
 	// TODO - binary going to be more efficient
 	std::string line;
@@ -299,30 +304,30 @@ ObjectID wander::Runtime::Render(const ObjectID renderlet_id)
 		int VertexOffset = atoi(values[1].data());
 		int VertexLength = atoi(values[2].data());
 
-		nodes.emplace_back(id, line, VertexOffset, VertexLength);
+		auto node = RenderTreeNode{id, line, VertexOffset, VertexLength};
+
+		nodes.push_back(node);
 	}
 
-	RenderTree tree(std::move(nodes));
-
-	m_render_trees.emplace_back(std::move(tree));
+	m_render_trees.push_back(std::make_unique<RenderTree>(nodes));
 
 	return m_render_trees.size() - 1;
 }
 
 const RenderTree* wander::Runtime::GetRenderTree(ObjectID tree_id)
 {
-	return &m_render_trees[tree_id];
+	return m_render_trees[tree_id].get();
 }
 
 void wander::Runtime::DestroyRenderTree(ObjectID tree_id)
 {
-	for (auto i = 0; i < m_render_trees[tree_id].Length(); ++i)
+	for (auto i = 0; i < m_render_trees[tree_id]->Length(); ++i)
 	{
-		const auto node = m_render_trees[tree_id].NodeAt(i);
+		const auto node = m_render_trees[tree_id]->NodeAt(i);
 		m_pal->DeleteBuffer(node->BufferID());
 	}
 
-	m_render_trees[tree_id].Clear();
+	m_render_trees[tree_id]->Clear();
 }
 
 void wander::Runtime::Release()
