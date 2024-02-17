@@ -8,6 +8,11 @@ UINT TextureData[] = // 2x2 pixel checkerboard pattern
     0xff7f7f7f, 0xffffffff,
 };
 
+UINT TextureDataWhite[] = // 1x1 pixel white
+{
+    0xffffffff
+};
+
 float VertexData[] = // pos.x, pos.y, pos.z, nor.x, nor.y, nor.z, tex.u, tex.v, col.r, col.g, col.b, ...
 {
     -1.0f,  1.0f, -1.0f,  0.0f,  0.0f, -1.0f,  0.0f,  0.0f,  0.973f,  0.480f,  0.002f,

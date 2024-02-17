@@ -259,6 +259,28 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
+	textureDesc.Width = 1;
+	textureDesc.Height = 1;
+	textureDesc.MipLevels = 1;
+	textureDesc.ArraySize = 1;
+	textureDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
+	textureDesc.SampleDesc.Count = 1;
+	textureDesc.Usage = D3D11_USAGE_IMMUTABLE;
+	textureDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+
+	textureData.pSysMem = TextureDataWhite;
+	textureData.SysMemPitch = sizeof(UINT); // 4 bytes per pixel
+
+	ID3D11Texture2D *textureWhite;
+
+	device->CreateTexture2D(&textureDesc, &textureData, &textureWhite);
+
+	ID3D11ShaderResourceView *textureViewWhite;
+
+	device->CreateShaderResourceView(textureWhite, nullptr, &textureViewWhite);
+
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+
     FLOAT backgroundColor[4] = { 0.025f, 0.025f, 0.025f, 1.0f };
 
     UINT stride = 11 * sizeof(float); // vertex size (11 floats: float3 position, float3 normal, float2 texcoord, float3 color)
@@ -385,6 +407,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
         //ID3D11ShaderResourceView *nullSRV[1] = {nullptr};
 		//deviceContext->PSSetShaderResources(0, 1, nullSRV);
+
+        deviceContext->PSSetShaderResources(0, 1, &textureViewWhite);
 
 		for (auto i = 0; i < tree->Length(); ++i)
 		{
