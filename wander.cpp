@@ -110,7 +110,12 @@ std::string RenderTreeNode::Metadata() const
 	return m_metadata;
 }
 
-ObjectID wander::Runtime::LoadFromFile(std::wstring path)
+ObjectID wander::Runtime::LoadFromFile(const std::wstring& path)
+{
+	return LoadFromFile(path, "start");
+}
+
+ObjectID wander::Runtime::LoadFromFile(const std::wstring& path, const std::string& function)
 {
 	auto context = WasmtimeContext{};
 
@@ -179,10 +184,12 @@ ObjectID wander::Runtime::LoadFromFile(std::wstring path)
 	if (error != NULL)
 		exit_with_error("failed to instantiate module", error, NULL);
 
-	if (!wasmtime_linker_get(context.Linker, context.Context, "", 0, "start", 5, &context.Run))
+	if (!wasmtime_linker_get(context.Linker, context.Context, "", 0, 
+		function.c_str(), function.length(), &context.Run))
 		return -1;
 
-	if (!wasmtime_linker_get(context.Linker, context.Context, "", 0, "memory", 6, &context.Memory))
+	if (!wasmtime_linker_get(context.Linker, context.Context, "", 0, 
+		"memory", 6, &context.Memory))
 		return -1;
 
 	m_contexts.push_back(context);
@@ -269,7 +276,7 @@ ObjectID wander::Runtime::Render(const ObjectID renderlet_id)
 	
 	wasm_trap_t *trap = nullptr;
 	wasmtime_error_t *error =
-		wasmtime_func_call(context.Context, &context.Run.of.func, &args[0], args.size(), results, 1, &trap);
+		wasmtime_func_call(context.Context, &context.Run.of.func, args.data(), args.size(), results, 1, &trap);
 
 	if (error != NULL || trap != NULL)
 		exit_with_error("failed to call run", error, trap);
@@ -351,7 +358,10 @@ void wander::Runtime::Release()
 	m_contexts.clear();
 	m_params.clear();
 
-	wasm_engine_delete(m_engine);
+	if (m_engine)
+	{
+		wasm_engine_delete(m_engine);
+	}
 
 	m_pal->Release();
 }

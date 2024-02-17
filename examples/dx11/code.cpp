@@ -9,12 +9,16 @@
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
+#define NOMINMAX
+
 #include <windows.h>
 #include <d3d11_1.h>
 #include <d3dcompiler.h>
 
 #include <math.h> // sin, cos
 #include "xube.h" // 3d model
+
+#include "wander.h"
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -154,6 +158,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     D3D11_RASTERIZER_DESC1 rasterizerDesc = {};
     rasterizerDesc.FillMode = D3D11_FILL_SOLID;
     rasterizerDesc.CullMode = D3D11_CULL_BACK;
+	rasterizerDesc.FrontCounterClockwise = false;
 
     ID3D11RasterizerState1* rasterizerState;
 
@@ -272,16 +277,41 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     float3 modelScale       = { 1.0f, 1.0f, 1.0f };
     float3 modelTranslation = { 2.0f, 0.0f, 4.0f };
 
+    float3 wasmScale = {0.1f, 0.1f, 0.1f};
+	float3 wasmTranslation = {-2.0f, 0.0f, 4.0f};
+
     ///////////////////////////////////////////////////////////////////////////////////////////////
+
+    const auto pal = wander::Factory::CreatePal(wander::EPalType::D3D11, device, deviceContext);
+	auto runtime = wander::Factory::CreateRuntime(pal);
+
+    auto renderlet_id = runtime->LoadFromFile(L"Building.wasm", "run");
+
+	auto tree_id = runtime->Render(renderlet_id);
+	auto tree = runtime->GetRenderTree(tree_id);
+
+	///////////////////////////////////////////////////////////////////////////////////////////////
 
     while (true)
     {
         MSG msg;
 
+        auto quit = false;
+
         while (PeekMessageA(&msg, nullptr, 0, 0, PM_REMOVE))
         {
-            if (msg.message == WM_KEYDOWN) return 0; // PRESS ANY KEY TO EXIT
+            if (msg.message == WM_KEYDOWN)
+            {
+				quit = true;
+				break;
+            }
+                
             DispatchMessageA(&msg);
+        }
+
+        if (quit)
+        {
+			break;
         }
 
         ///////////////////////////////////////////////////////////////////////////////////////////
@@ -340,8 +370,36 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
         ///////////////////////////////////////////////////////////////////////////////////////////
 
+        scale = {wasmScale.x, 0, 0, 0, 0, wasmScale.y, 0, 0, 0, 0, wasmScale.z, 0, 0, 0, 0, 1};
+        translate = { 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, wasmTranslation.x, wasmTranslation.y, wasmTranslation.z, 1 };
+
+        deviceContext->Map(constantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedSubresource);
+
+        constants = reinterpret_cast<Constants*>(mappedSubresource.pData);
+
+        constants->Transform   = rotateX * rotateY * rotateZ * scale * translate;
+        constants->Projection  = { 2 * n / w, 0, 0, 0, 0, 2 * n / h, 0, 0, 0, 0, f / (f - n), 1, 0, 0, n * f / (n - f), 0 };
+        constants->LightVector = { 1.0f, -1.0f, 1.0f };
+
+        deviceContext->Unmap(constantBuffer, 0);
+
+        //ID3D11ShaderResourceView *nullSRV[1] = {nullptr};
+		//deviceContext->PSSetShaderResources(0, 1, nullSRV);
+
+		for (auto i = 0; i < tree->Length(); ++i)
+		{
+			tree->NodeAt(i)->RenderFixedStride(runtime, stride);
+		}
+
+        ///////////////////////////////////////////////////////////////////////////////////////////
+
         swapChain->Present(1, 0);
     }
+
+    if (runtime)
+		runtime->Release();
+
+    return 0; // PRESS ANY KEY TO EXIT
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////

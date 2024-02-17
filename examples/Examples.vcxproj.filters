@@ -20,5 +20,7 @@
     <CopyFileToFolders Include="dx11\shaders.hlsl">
       <Filter>DX11</Filter>
     </CopyFileToFolders>
+    <CopyFileToFolders Include="..\wasmtime\lib\wasmtime.dll" />
+    <CopyFileToFolders Include="Building.wasm" />
   </ItemGroup>
 </Project>

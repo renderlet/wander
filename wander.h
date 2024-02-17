@@ -161,7 +161,8 @@ private:
 class IRuntime : public Object
 {
 public:
-	virtual ObjectID LoadFromFile(std::wstring path) = 0;
+	virtual ObjectID LoadFromFile(const std::wstring &path) = 0;
+	virtual ObjectID LoadFromFile(const std::wstring& path, const std::string& function) = 0;
 
 	virtual void PushParam(ObjectID renderlet_id, float value) = 0;
 	virtual void PushParam(ObjectID renderlet_id, double value) = 0;
@@ -202,7 +203,8 @@ public:
 	{
 	}
 
-	ObjectID LoadFromFile(std::wstring path) override;
+	ObjectID LoadFromFile(const std::wstring &path) override;
+	ObjectID LoadFromFile(const std::wstring &path, const std::string& function) override;
 
 	void PushParam(ObjectID renderlet_id, float value) override;
 	void PushParam(ObjectID renderlet_id, double value) override;
@@ -254,9 +256,9 @@ public:
 		switch (type)
 		{
 		case EPalType::D3D11:
+		default:
 			return new PalD3D11(std::forward<ARGs>(args)...);
 		}
-
 	}
 
 	static IRuntime* CreateRuntime(IPal *pal)
