@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include <ostream>
 #include <queue>
 #include <utility>
 #include <vector>

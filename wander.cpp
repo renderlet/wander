@@ -139,8 +139,8 @@ ObjectID wander::Runtime::LoadFromFile(std::wstring path)
 
 	wasm_byte_vec_t wasm;
 	// Load our input file to parse it next
-	FILE *file = _wfopen(path.c_str(), L"rb");
-	if (!file)
+	FILE *file;
+	if (_wfopen_s(&file, path.c_str(), L"rb") || !file)
 	{
 		printf("> Error loading file!\n");
 		exit(1);
