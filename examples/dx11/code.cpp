@@ -304,7 +304,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
-    const auto pal = wander::Factory::CreatePal(wander::EPalType::D3D11, device, deviceContext);
+    const auto pal = wander::Factory::CreatePal(
+        wander::EPalType::D3D11, baseDevice, baseDeviceContext);
 	auto runtime = wander::Factory::CreateRuntime(pal);
 
     auto renderlet_id = runtime->LoadFromFile(L"Building.wasm", "run");

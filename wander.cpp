@@ -1,4 +1,4 @@
-#include "wander.h"
+#include "wander_lib.h"
 
 #include <sstream>
 
@@ -365,3 +365,25 @@ void wander::Runtime::Release()
 
 	m_pal->Release();
 }
+
+template <typename... ARGs>
+IPal* Factory::CreatePal(EPalType type, ARGs &&...args)
+{
+	switch (type)
+	{
+	case EPalType::D3D11:
+	default:
+		return new PalD3D11(std::forward<ARGs>(args)...);
+	}
+}
+
+
+IRuntime* Factory::CreateRuntime(IPal *pal)
+{
+	return new Runtime(static_cast<Pal *>(pal));
+}
+
+//template IPal * Factory::CreatePal<int>(EPalType type, int &&...args);
+
+template class wander::IPal *__cdecl wander::Factory::CreatePal<struct ID3D11Device *&, struct ID3D11DeviceContext *&>(
+	enum wander::EPalType, struct ID3D11Device *&, struct ID3D11DeviceContext *&);
