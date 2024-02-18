@@ -4,21 +4,27 @@
 #include <stdbool.h>
 
 #define GLFW_INCLUDE_NONE
-//#define GLFW_INCLUDE_GLCOREARB
-//#define GLFW_INCLUDE_GLEXT
 #include <iostream>
 
-//#include "GL/gl3w.h"
-//#include <GL/gl.h>
-#include <GL/glew.h>
+#include <GL/gl3w.h>
 #include "GLFW/glfw3.h"
 
 
+#ifdef _WIN32
+
 #pragma comment(lib, "OpenGL32.lib")
-#pragma comment(lib, "glfw/lib-vc2022/glfw3dll.lib")
-#pragma comment(lib, "glew/lib/Release/x64/glew32.lib")
+#pragma comment(lib, "glfw/lib-vc2022/glfw3.lib")
 
+extern "C"
+{
+__declspec(dllexport) unsigned long NvOptimusEnablement = 0x00000001;
+}
 
+extern "C"
+{
+__declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
+}
+#endif
 
 #define countof(x) (sizeof(x) / sizeof(0[x]))
 
@@ -117,12 +123,11 @@ key_callback(GLFWwindow *window, int key, int scancode, int action, int mods)
         glfwSetWindowShouldClose(window, GL_TRUE);
 }
 
-void GLAPIENTRY MessageCallback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length,
-								const GLchar *message, const void *userParam)
+void error_callback(int error, const char *description)
 {
-	fprintf(stderr, "GL CALLBACK: %s type = 0x%x, severity = 0x%x, message = %s\n",
-			(type == GL_DEBUG_TYPE_ERROR ? "** GL ERROR **" : ""), type, severity, message);
+	fprintf(stderr, "Error: %s\n", description);
 }
+
 
 int main(int argc, char **argv)
 //int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
@@ -144,24 +149,22 @@ int main(int argc, char **argv)
     }
 	*/
 
-
     /* Create window and OpenGL context */
-    struct graphics_context context;
+    struct graphics_context context{};
     if (!glfwInit()) {
         fprintf(stderr, "GLFW3: failed to initialize\n");
         exit(EXIT_FAILURE);
     }
 
-    // During init, enable debug output
-	//glEnable(GL_DEBUG_OUTPUT);
-	//glDebugMessageCallback(MessageCallback, 0);
+    glfwWindowHint(GLFW_SAMPLES, 4);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
+    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    //glfwWindowHint(GLFW_SAMPLES, 4);
-    //glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    //glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-    //glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
-    //glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-	//glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    glfwSetErrorCallback(error_callback);
+
     if (fullscreen) {
         GLFWmonitor *monitor = glfwGetPrimaryMonitor();
         const GLFWvidmode *m = glfwGetVideoMode(monitor);
@@ -172,15 +175,14 @@ int main(int argc, char **argv)
             glfwCreateWindow(640, 640, title, NULL, NULL);
     }
 
-
     glfwMakeContextCurrent(context.window);
     glfwSwapInterval(1);
 
     /* Initialize gl3w */
-    //if (gl3wInit()) {
-    //    fprintf(stderr, "gl3w: failed to initialize\n");
-    //    exit(EXIT_FAILURE);
-    // }
+    if (gl3wInit()) {
+        fprintf(stderr, "gl3w: failed to initialize\n");
+        exit(EXIT_FAILURE);
+    }
 
     /* Shader sources */
     const GLchar *vert_shader =
