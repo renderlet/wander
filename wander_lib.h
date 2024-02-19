@@ -61,7 +61,7 @@ private:
 class PalOpenGL : public Pal
 {
 public:
-	PalOpenGL() = default;
+	PalOpenGL(void* context) : m_context(context) {}
 
 	void Release() override{};
 
@@ -78,6 +78,8 @@ public:
 private:
 	std::vector<GLuint> m_vbos;
 	std::vector<GLuint> m_vaos;
+
+	void *m_context;
 };
 
 

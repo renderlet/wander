@@ -9,6 +9,7 @@
 #include <GL/gl3w.h>
 #include "GLFW/glfw3.h"
 
+#include "wander.h"
 
 #ifdef _WIN32
 
@@ -229,6 +230,16 @@ int main(int argc, char **argv)
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
 
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+
+	const auto pal = wander::Factory::CreatePal(wander::EPalType::OpenGL, (void*)context.window);
+	auto runtime = wander::Factory::CreateRuntime(pal);
+
+	auto renderlet_id = runtime->LoadFromFile(L"Building.wasm", "run");
+
+	auto tree_id = runtime->Render(renderlet_id);
+	auto tree = runtime->GetRenderTree(tree_id);
+
     /* Start main loop */
     glfwSetKeyCallback(context.window, key_callback);
     context.lastframe = glfwGetTime();
@@ -247,3 +258,4 @@ int main(int argc, char **argv)
     glfwTerminate();
     return 0;
 }
+

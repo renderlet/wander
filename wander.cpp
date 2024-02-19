@@ -413,16 +413,31 @@ void wander::Runtime::Release()
 	m_pal->Release();
 }
 
+template <class T, class... Args,
+	std::enable_if_t<!std::is_constructible<T, Args &&...>::value, bool> = true>
+ // Using helper type
+T* construct(Args &&...args)
+{
+	return nullptr;
+}	
+
+template <class T, class... Args,
+	std::enable_if_t<std::is_constructible<T, Args &&...>::value, bool> = true>
+T* construct(Args &&...args)
+{
+	return new T(std::forward<Args>(args)...);
+}
+
 template <typename... ARGs>
 IPal* Factory::CreatePal(EPalType type, ARGs &&...args)
 {
 	switch (type)
 	{
 	case EPalType::D3D11:
-		return new PalD3D11(std::forward<ARGs>(args)...);
+		return construct<PalD3D11, ARGs...>(std::forward<ARGs>(args)...);
 	case EPalType::OpenGL:
 	default:
-		return new PalOpenGL();
+		return construct<PalOpenGL, ARGs...>(std::forward<ARGs>(args)...);
 	}
 }
 
@@ -432,9 +447,9 @@ IRuntime* Factory::CreateRuntime(IPal *pal)
 	return new Runtime(static_cast<Pal *>(pal));
 }
 
-//template IPal * Factory::CreatePal<int>(EPalType type, int &&...args);
+
+template class wander::IPal *__cdecl wander::Factory::CreatePal<void *>(enum wander::EPalType, void *&&);
 
 template class wander::IPal *__cdecl wander::Factory::CreatePal<struct ID3D11Device *&, struct ID3D11DeviceContext *&>(
 	enum wander::EPalType, struct ID3D11Device *&, struct ID3D11DeviceContext *&);
 
-//template class wander::IPal *__cdecl wander::Factory::CreatePal(enum wander::EPalType);
