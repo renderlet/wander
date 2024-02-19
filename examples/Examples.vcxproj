@@ -214,6 +214,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="..\wander.h" />
     <ClInclude Include="dx11\xube.h" />
   </ItemGroup>
   <ItemGroup>

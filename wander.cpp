@@ -7,6 +7,11 @@
 #include "wasmtime.hh"
 
 #include <d3d11.h>
+#include <gl3w.c>
+
+#ifdef _WIN32
+#pragma comment(lib, "OpenGL32.lib")
+#endif
 
 using namespace wander;
 
@@ -98,6 +103,48 @@ void PalD3D11::DrawTriangleList(ObjectID buffer_id, int offset, int length, unsi
 	m_device_context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	m_device_context->IASetVertexBuffers(0, 1, &m_buffers[buffer_id], &strides, &offsets);
 	m_device_context->Draw(length, offset);
+}
+
+ObjectID PalOpenGL::CreateBuffer(BufferDescriptor desc, int length, uint8_t data[])
+{
+	switch (desc.Type())
+	{
+	case BufferType::Vertex:
+		break;
+	case BufferType::Index:
+	case BufferType::Texture2D:
+		exit_with_error("PalOpenGL only currently supports BufferType::Vertex",
+			nullptr, nullptr);
+		break;
+	}
+
+	GLuint vbo{};
+	glGenBuffers(1, &vbo);
+	glBindBuffer(GL_ARRAY_BUFFER, vbo);
+	glBufferData(GL_ARRAY_BUFFER, length, data, GL_STATIC_DRAW);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	m_vbos.emplace_back(vbo);
+
+	GLuint vao{};
+	glGenVertexArrays(1, &vao);
+	glBindVertexArray(vao);
+	glBindBuffer(GL_ARRAY_BUFFER, vbo);
+	m_vaos.emplace_back(vao);
+
+	return 0;
+}
+
+void PalOpenGL::DeleteBuffer(ObjectID buffer_id)
+{
+	glDeleteVertexArrays(1, &m_vaos[buffer_id]);
+	glDeleteBuffers(1, &m_vbos[buffer_id]);
+}
+
+void PalOpenGL::DrawTriangleList(ObjectID buffer_id, int offset, int length, unsigned stride)
+{
+	glBindVertexArray(m_vaos[buffer_id]);
+	glDrawArrays(GL_TRIANGLE_STRIP, offset, length / stride);
+	glBindVertexArray(0);
 }
 
 void RenderTreeNode::RenderFixedStride(IRuntime* runtime, unsigned int stride) const
@@ -372,8 +419,10 @@ IPal* Factory::CreatePal(EPalType type, ARGs &&...args)
 	switch (type)
 	{
 	case EPalType::D3D11:
-	default:
 		return new PalD3D11(std::forward<ARGs>(args)...);
+	case EPalType::OpenGL:
+	default:
+		return new PalOpenGL();
 	}
 }
 
@@ -387,3 +436,5 @@ IRuntime* Factory::CreateRuntime(IPal *pal)
 
 template class wander::IPal *__cdecl wander::Factory::CreatePal<struct ID3D11Device *&, struct ID3D11DeviceContext *&>(
 	enum wander::EPalType, struct ID3D11Device *&, struct ID3D11DeviceContext *&);
+
+//template class wander::IPal *__cdecl wander::Factory::CreatePal(enum wander::EPalType);

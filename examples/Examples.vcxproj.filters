@@ -9,6 +9,7 @@
     <ClInclude Include="dx11\xube.h">
       <Filter>DX11</Filter>
     </ClInclude>
+    <ClInclude Include="..\wander.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dx11\code.cpp">

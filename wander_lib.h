@@ -15,6 +15,8 @@ struct ID3D11Device;
 struct ID3D11DeviceContext;
 struct ID3D11Buffer;
 
+typedef unsigned int GLuint;
+
 namespace wander
 {
 
@@ -53,6 +55,29 @@ private:
 
 	ID3D11Device* m_device;
 	ID3D11DeviceContext* m_device_context;
+};
+
+
+class PalOpenGL : public Pal
+{
+public:
+	PalOpenGL() = default;
+
+	void Release() override{};
+
+	EPalType Type() override
+	{
+		return EPalType::OpenGL;
+	}
+
+	ObjectID CreateBuffer(BufferDescriptor desc, int length, uint8_t data[]) override;
+	void DeleteBuffer(ObjectID buffer_id) override;
+
+	void DrawTriangleList(ObjectID buffer_id, int offset, int length, unsigned int stride) override;
+
+private:
+	std::vector<GLuint> m_vbos;
+	std::vector<GLuint> m_vaos;
 };
 
 

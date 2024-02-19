@@ -26,6 +26,11 @@ __declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
 }
 #endif
 
+#ifdef _WIN64
+// TODO - move to wander lib
+#pragma comment(lib, "wasmtime.dll.lib")
+#endif
+
 #define countof(x) (sizeof(x) / sizeof(0[x]))
 
 #define M_PI 3.141592653589793
@@ -221,7 +226,7 @@ int main(int argc, char **argv)
     glBindBuffer(GL_ARRAY_BUFFER, context.vbo_point);
     glVertexAttribPointer(ATTRIB_POINT, 2, GL_FLOAT, GL_FALSE, 0, 0);
     glEnableVertexAttribArray(ATTRIB_POINT);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
 
     /* Start main loop */
