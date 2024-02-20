@@ -77,6 +77,9 @@ struct graphics_context {
     GLFWwindow *window;
     GLuint program;
     GLint uniform_angle;
+	GLuint program_wasm;
+	GLint uniform_transform;
+	GLint uniform_projection;
     GLuint vbo_point;
     GLuint vao_point;
     double angle;
@@ -207,6 +210,37 @@ int main(int argc, char **argv)
         "    color = vec4(1, 0.15, 0.15, 0);\n"
         "}\n";
 
+    const GLchar *vert_shader_wasm = 
+        "#version 330\n"
+	    "#extension GL_ARB_separate_shader_objects : require \n"
+		"layout(location = 0) in vec3 vs_position;\n"
+		"layout(location = 1) in vec3 vs_normal;\n"
+		"layout(location = 2) in vec2 vs_texcoord;\n"
+		"layout(location = 3) in vec3 vs_color;\n"
+		"layout(location = 0) out vec2 ps_texcoord;\n"
+		"layout(location = 1) out vec4 ps_color;\n"
+		"uniform mat4 transform;\n"
+		"uniform mat4 projection;\n"
+		"void main()\n"
+		"{\n"
+		"	gl_Position = vec4(vs_position, 1.0) * transform * projection;\n"
+		"	ps_texcoord = vs_texcoord;\n"
+		"	ps_color = vec4(vs_color, 1.0);\n"
+		"}\n";
+
+    const GLchar *frag_shader_wasm = 
+        "#version 330\n"
+		"#extension GL_ARB_separate_shader_objects : require \n"
+	    "//uniform sampler2D mytexture;\n"
+		"out vec4 out_color;\n"
+		"layout(location = 0) in vec2 ps_texcoord;\n"
+		"layout(location = 1) in vec4 ps_color;\n"
+		"void main()\n"
+		"{\n"
+		"    //out_color = texture(mytexture, ps_texcoord) * ps_color;\n"
+		"    out_color = ps_color;\n"
+		"}\n";
+
     /* Compile and link OpenGL program */
     GLuint vert = compile_shader(GL_VERTEX_SHADER, vert_shader);
     GLuint frag = compile_shader(GL_FRAGMENT_SHADER, frag_shader);
@@ -214,6 +248,15 @@ int main(int argc, char **argv)
     context.uniform_angle = glGetUniformLocation(context.program, "angle");
     glDeleteShader(frag);
     glDeleteShader(vert);
+
+    GLuint vert_wasm = compile_shader(GL_VERTEX_SHADER, vert_shader_wasm);
+	GLuint frag_wasm = compile_shader(GL_FRAGMENT_SHADER, frag_shader_wasm);
+	context.program_wasm = link_program(vert_wasm, frag_wasm);
+	context.uniform_transform = glGetUniformLocation(context.program_wasm, "transform");
+	context.uniform_projection = glGetUniformLocation(context.program_wasm, "projection");
+	glDeleteShader(frag_wasm);
+	glDeleteShader(vert_wasm);
+
 
     /* Prepare vertex buffer object (VBO) */
     glGenBuffers(1, &context.vbo_point);
@@ -239,6 +282,17 @@ int main(int argc, char **argv)
 
 	auto tree_id = runtime->Render(renderlet_id);
 	auto tree = runtime->GetRenderTree(tree_id);
+
+    glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 11, 0);
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 11, (void *)(sizeof(GLfloat) * 3));
+	glEnableVertexAttribArray(2);
+	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 11, (void *)(sizeof(GLfloat) * 6));
+	glEnableVertexAttribArray(3);
+	glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 11, (void *)(sizeof(GLfloat) * 8));
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindVertexArray(0);
 
     /* Start main loop */
     glfwSetKeyCallback(context.window, key_callback);
