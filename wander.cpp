@@ -143,7 +143,7 @@ void PalOpenGL::DeleteBuffer(ObjectID buffer_id)
 void PalOpenGL::DrawTriangleList(ObjectID buffer_id, int offset, int length, unsigned stride)
 {
 	glBindVertexArray(m_vaos[buffer_id]);
-	glDrawArrays(GL_TRIANGLE_STRIP, offset, length / stride);
+	glDrawArrays(GL_TRIANGLES, offset, length);
 	glBindVertexArray(0);
 }
 

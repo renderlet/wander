@@ -1,13 +1,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
-#include <stdbool.h>
 
-#define GLFW_INCLUDE_NONE
 #include <iostream>
 
+#define GLFW_INCLUDE_NONE
 #include <GL/gl3w.h>
 #include "GLFW/glfw3.h"
+
+#include "glm/glm.hpp"
+#include "glm/ext.hpp"
 
 #include "wander.h"
 
@@ -25,12 +27,14 @@ extern "C"
 {
 __declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
 }
-#endif
 
 #ifdef _WIN64
 // TODO - move to wander lib
 #pragma comment(lib, "wasmtime.dll.lib")
 #endif
+
+#endif
+
 
 #define countof(x) (sizeof(x) / sizeof(0[x]))
 
@@ -85,6 +89,8 @@ struct graphics_context {
     double angle;
     long framecount;
     double lastframe;
+	wander::IRuntime* runtime;
+	const wander::RenderTree* tree;
 };
 
 const float SQUARE[] = {
@@ -94,11 +100,31 @@ const float SQUARE[] = {
      1.0f, -1.0f
 };
 
+struct float3
+{
+	float x, y, z;
+};
+struct matrix
+{
+	float m[4][4];
+};
+
+matrix operator*(const matrix &m1, const matrix &m2);
+
+float w = 1.0f; // width (aspect ratio)
+float h = 1.0f; // height
+float n = 1.0f; // near
+float f = 90.0f; // far
+
+float3 modelRotation = {0.0f, 0.0f, 0.0f};
+float3 modelScale = {0.8f, 0.8f, 0.8f};
+float3 modelTranslation = {-3.0f, 4.0f, 0.0f};
+
 static void
 render(struct graphics_context *context)
 {
     glClearColor(0.15, 0.15, 0.15, 1);
-    glClear(GL_COLOR_BUFFER_BIT);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     glUseProgram(context->program);
     glUniform1f(context->uniform_angle, context->angle);
@@ -106,6 +132,38 @@ render(struct graphics_context *context)
     glDrawArrays(GL_TRIANGLE_STRIP, 0, countof(SQUARE) / 2);
     glBindVertexArray(0);
     glUseProgram(0);
+
+	glUseProgram(context->program_wasm);
+
+    matrix rotateX   = { 1, 0, 0, 0, 0, static_cast<float>(cos(modelRotation.x)), -static_cast<float>(sin(modelRotation.x)), 0, 0, static_cast<float>(sin(modelRotation.x)), static_cast<float>(cos(modelRotation.x)), 0, 0, 0, 0, 1 };
+    matrix rotateY   = { static_cast<float>(cos(modelRotation.y)), 0, static_cast<float>(sin(modelRotation.y)), 0, 0, 1, 0, 0, -static_cast<float>(sin(modelRotation.y)), 0, static_cast<float>(cos(modelRotation.y)), 0, 0, 0, 0, 1 };
+    matrix rotateZ   = { static_cast<float>(cos(modelRotation.z)), -static_cast<float>(sin(modelRotation.z)), 0, 0, static_cast<float>(sin(modelRotation.z)), static_cast<float>(cos(modelRotation.z)), 0, 0, 0, 0, 1, 0, 0, 0, 0, 1 };
+    matrix scale     = { modelScale.x, 0, 0, 0, 0, modelScale.y, 0, 0, 0, 0, modelScale.z, 0, 0, 0, 0, 1 };
+    matrix translate = {
+    	1, 0, 0, 0,
+    	0, 1, 0, 0,
+    	0, 0, 1, 0,
+    	modelTranslation.x, modelTranslation.y, modelTranslation.z, 1 };
+
+    modelRotation.x += 0.005f;
+    modelRotation.y += 0.009f;
+    modelRotation.z += 0.01f;
+
+	matrix Transform = rotateX * rotateY * rotateZ * scale * translate;
+
+    glm::mat4 Projection = glm::perspective(90.0f, 3.0f / 3.0f, 0.1f, 1000.f);
+
+    glUniformMatrix4fv(context->uniform_transform, 1, GL_FALSE, (GLfloat *)Transform.m);
+	glUniformMatrix4fv(context->uniform_projection, 1, GL_FALSE, glm::value_ptr(Projection)); 
+
+    glDisable(GL_CULL_FACE);
+
+    for (auto i = 0; i < context->tree->Length(); ++i)
+	{
+		context->tree->NodeAt(i)->RenderFixedStride(context->runtime, sizeof(GLfloat) * 11);
+	}
+
+	glUseProgram(0);
 
     /* Physics */
     double now = glfwGetTime();
@@ -138,25 +196,13 @@ void error_callback(int error, const char *description)
 }
 
 
+
+
 int main(int argc, char **argv)
-//int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
 {
     /* Options */
     bool fullscreen = false;
-    const char *title = "OpenGL 3.3 Demo";
-
-    /*
-    int opt;
-    while ((opt = getopt(argc, argv, "f")) != -1) {
-        switch (opt) {
-            case 'f':
-                fullscreen = true;
-                break;
-            default:
-                exit(EXIT_FAILURE);
-        }
-    }
-	*/
+    const char *title = "Wander OpenGL 3.3 Demo";
 
     /* Create window and OpenGL context */
     struct graphics_context context{};
@@ -174,15 +220,7 @@ int main(int argc, char **argv)
 
     glfwSetErrorCallback(error_callback);
 
-    if (fullscreen) {
-        GLFWmonitor *monitor = glfwGetPrimaryMonitor();
-        const GLFWvidmode *m = glfwGetVideoMode(monitor);
-        context.window =
-            glfwCreateWindow(m->width, m->height, title, monitor, NULL);
-    } else {
-        context.window =
-            glfwCreateWindow(640, 640, title, NULL, NULL);
-    }
+	context.window = glfwCreateWindow(640, 640, title, NULL, NULL);
 
     glfwMakeContextCurrent(context.window);
     glfwSwapInterval(1);
@@ -201,7 +239,7 @@ int main(int argc, char **argv)
         "void main() {\n"
         "    mat2 rotate = mat2(cos(angle), -sin(angle),\n"
         "                       sin(angle), cos(angle));\n"
-        "    gl_Position = vec4(0.75 * rotate * point, 0.0, 1.0);\n"
+        "    gl_Position = vec4(0.75 * rotate * point, 0.99, 1.0);\n"
         "}\n";
     const GLchar *frag_shader =
         "#version 330\n"
@@ -223,7 +261,7 @@ int main(int argc, char **argv)
 		"uniform mat4 projection;\n"
 		"void main()\n"
 		"{\n"
-		"	gl_Position = vec4(vs_position, 1.0) * transform * projection;\n"
+		"	gl_Position = projection * transform * vec4(vs_position, 1.0);\n"
 		"	ps_texcoord = vs_texcoord;\n"
 		"	ps_color = vec4(vs_color, 1.0);\n"
 		"}\n";
@@ -231,13 +269,11 @@ int main(int argc, char **argv)
     const GLchar *frag_shader_wasm = 
         "#version 330\n"
 		"#extension GL_ARB_separate_shader_objects : require \n"
-	    "//uniform sampler2D mytexture;\n"
 		"out vec4 out_color;\n"
 		"layout(location = 0) in vec2 ps_texcoord;\n"
 		"layout(location = 1) in vec4 ps_color;\n"
 		"void main()\n"
 		"{\n"
-		"    //out_color = texture(mytexture, ps_texcoord) * ps_color;\n"
 		"    out_color = ps_color;\n"
 		"}\n";
 
@@ -257,7 +293,6 @@ int main(int argc, char **argv)
 	glDeleteShader(frag_wasm);
 	glDeleteShader(vert_wasm);
 
-
     /* Prepare vertex buffer object (VBO) */
     glGenBuffers(1, &context.vbo_point);
     glBindBuffer(GL_ARRAY_BUFFER, context.vbo_point);
@@ -276,12 +311,12 @@ int main(int argc, char **argv)
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
 	const auto pal = wander::Factory::CreatePal(wander::EPalType::OpenGL, (void*)context.window);
-	auto runtime = wander::Factory::CreateRuntime(pal);
+	context.runtime = wander::Factory::CreateRuntime(pal);
 
-	auto renderlet_id = runtime->LoadFromFile(L"Building.wasm", "run");
+	auto renderlet_id = context.runtime->LoadFromFile(L"Building.wasm", "run");
 
-	auto tree_id = runtime->Render(renderlet_id);
-	auto tree = runtime->GetRenderTree(tree_id);
+	auto tree_id = context.runtime->Render(renderlet_id);
+	context.tree = context.runtime->GetRenderTree(tree_id);
 
     glEnableVertexAttribArray(0);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 11, 0);
@@ -293,6 +328,8 @@ int main(int argc, char **argv)
 	glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 11, (void *)(sizeof(GLfloat) * 8));
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindVertexArray(0);
+
+    glEnable(GL_DEPTH_TEST);
 
     /* Start main loop */
     glfwSetKeyCallback(context.window, key_callback);
@@ -309,7 +346,33 @@ int main(int argc, char **argv)
     glDeleteBuffers(1, &context.vbo_point);
     glDeleteProgram(context.program);
 
+    glDeleteProgram(context.program_wasm);
+	context.runtime->Release();
+
     glfwTerminate();
     return 0;
 }
 
+///////////////////////////////////////////////////////////////////////////////////////////////////
+
+matrix operator*(const matrix &m1, const matrix &m2)
+{
+	return {
+		m1.m[0][0] * m2.m[0][0] + m1.m[0][1] * m2.m[1][0] + m1.m[0][2] * m2.m[2][0] + m1.m[0][3] * m2.m[3][0],
+		m1.m[0][0] * m2.m[0][1] + m1.m[0][1] * m2.m[1][1] + m1.m[0][2] * m2.m[2][1] + m1.m[0][3] * m2.m[3][1],
+		m1.m[0][0] * m2.m[0][2] + m1.m[0][1] * m2.m[1][2] + m1.m[0][2] * m2.m[2][2] + m1.m[0][3] * m2.m[3][2],
+		m1.m[0][0] * m2.m[0][3] + m1.m[0][1] * m2.m[1][3] + m1.m[0][2] * m2.m[2][3] + m1.m[0][3] * m2.m[3][3],
+		m1.m[1][0] * m2.m[0][0] + m1.m[1][1] * m2.m[1][0] + m1.m[1][2] * m2.m[2][0] + m1.m[1][3] * m2.m[3][0],
+		m1.m[1][0] * m2.m[0][1] + m1.m[1][1] * m2.m[1][1] + m1.m[1][2] * m2.m[2][1] + m1.m[1][3] * m2.m[3][1],
+		m1.m[1][0] * m2.m[0][2] + m1.m[1][1] * m2.m[1][2] + m1.m[1][2] * m2.m[2][2] + m1.m[1][3] * m2.m[3][2],
+		m1.m[1][0] * m2.m[0][3] + m1.m[1][1] * m2.m[1][3] + m1.m[1][2] * m2.m[2][3] + m1.m[1][3] * m2.m[3][3],
+		m1.m[2][0] * m2.m[0][0] + m1.m[2][1] * m2.m[1][0] + m1.m[2][2] * m2.m[2][0] + m1.m[2][3] * m2.m[3][0],
+		m1.m[2][0] * m2.m[0][1] + m1.m[2][1] * m2.m[1][1] + m1.m[2][2] * m2.m[2][1] + m1.m[2][3] * m2.m[3][1],
+		m1.m[2][0] * m2.m[0][2] + m1.m[2][1] * m2.m[1][2] + m1.m[2][2] * m2.m[2][2] + m1.m[2][3] * m2.m[3][2],
+		m1.m[2][0] * m2.m[0][3] + m1.m[2][1] * m2.m[1][3] + m1.m[2][2] * m2.m[2][3] + m1.m[2][3] * m2.m[3][3],
+		m1.m[3][0] * m2.m[0][0] + m1.m[3][1] * m2.m[1][0] + m1.m[3][2] * m2.m[2][0] + m1.m[3][3] * m2.m[3][0],
+		m1.m[3][0] * m2.m[0][1] + m1.m[3][1] * m2.m[1][1] + m1.m[3][2] * m2.m[2][1] + m1.m[3][3] * m2.m[3][1],
+		m1.m[3][0] * m2.m[0][2] + m1.m[3][1] * m2.m[1][2] + m1.m[3][2] * m2.m[2][2] + m1.m[3][3] * m2.m[3][2],
+		m1.m[3][0] * m2.m[0][3] + m1.m[3][1] * m2.m[1][3] + m1.m[3][2] * m2.m[2][3] + m1.m[3][3] * m2.m[3][3],
+	};
+}
