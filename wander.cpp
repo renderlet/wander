@@ -336,8 +336,20 @@ ObjectID wander::Runtime::Render(const ObjectID renderlet_id)
 
 	BufferDescriptor desc { BufferType::Vertex };
 
-	auto vert_length = *reinterpret_cast<uint32_t *>(output);
-	auto verts = output + 4;
+	auto version = *reinterpret_cast<uint32_t *>(output);
+	if (version != 1)
+	{
+		return -1;
+	}
+
+	auto vert_length = *reinterpret_cast<uint32_t *>(output + sizeof(uint32_t));
+	auto vert_format = *reinterpret_cast<uint32_t *>(output + 2 * sizeof(uint32_t));
+	auto verts = output + 3 * sizeof(uint32_t);
+
+	if (vert_format == 2)
+	{
+		desc = {BufferType::Index};
+	}
 
 	auto id = m_pal->CreateBuffer(desc, vert_length, verts);
 
