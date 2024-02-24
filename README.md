@@ -3,15 +3,31 @@ wander - the Wasm Renderer
 
 `wander` is a GPU-based rendering framework designed to be fully embeddable in any application.
 
-Use `wander` to run `renderlet`s in your existing software - self contained, portable modules of graphics data and code compiled to WebAssembly. 
+Use `wander` to run `renderlets` in your existing software - self contained, portable modules of graphics data and code compiled to WebAssembly. 
 
-## Why use a renderlet?
+## What can this do?
 
-The `wander` SDK brings all of the benefits of `renderlet`s into your own application:
+Renderlet is like Unity for Apps. Developers can build modern, interactive visualizations that run on any platform.
+
+Many modern apps need a high-performance rendering engine that works in a browser or in a native app, where a JavaScript library won't scale, but a game engine is too heavy. 
+
+### Example use-cases
+
+Use `wander` to build things like:
+* Modern CAD Apps: Use code to allow objects to describe how to render themselves
+* Procedural Modeling and DataViz: Execute runtime code to view your data in new ways
+* Product Visualization: Interact with dynamic objects in 3D on any device
+* Composable User Interfaces: Render any UI module on top of an existing canvas or in any scene
+* Interactive Animations: Like Adobe Flash, but with an actual programming language and GPUs
+* Low/No-Code Graphics: Make a graphics pipelines out of existing building blocks
+
+### Why use a renderlet?
+
+The `wander` SDK brings all of the benefits of `renderlets` into your own application:
 * High performance 2D and 3D graphics
 * Fully portable rendering pipelines
     * Any app, device, client, or server
-* Sandboxed third party code execution
+    * Sandboxed third party code execution
 * Self contained rendering modules
     *  Reuse your graphics code as building blocks
 * No game engine / platform dependencies
@@ -111,9 +127,10 @@ This format can and will change over time, so please only experiment with this i
 | Distributed GPU compute  |   |   | :triangular_ruler: |
 | Web build  |   | :hammer_and_wrench:  |  |
 | Renderlet compiler toolset <br>(easily build your own renderlets) |   | :hammer_and_wrench: (*) |  |
+
 *unstable API
 
-Feature requests welcome, please submite an issue!
+Feature requests welcome, please submit an issue!
 
 ## Architecture / Roadmap 
 
