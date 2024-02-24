@@ -215,6 +215,11 @@
     <ClInclude Include="..\..\wander.h" />
     <ClInclude Include="..\..\wander_lib.h" />
   </ItemGroup>
+  <ItemGroup>
+    <CopyFileToFolders Include="..\..\wasmtime\lib\wasmtime.dll">
+      <FileType>Document</FileType>
+    </CopyFileToFolders>
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

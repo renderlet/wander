@@ -1,0 +1,16 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClInclude Include="xube.h" />
+    <ClInclude Include="..\..\wander.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="code.cpp" />
+    <ClCompile Include="..\..\wander.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <CopyFileToFolders Include="shaders.hlsl" />
+    <CopyFileToFolders Include="..\..\wasmtime\lib\wasmtime.dll" />
+    <CopyFileToFolders Include="..\Building.wasm" />
+  </ItemGroup>
+</Project>

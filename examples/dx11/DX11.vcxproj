@@ -214,25 +214,25 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="..\wander.h" />
-    <ClInclude Include="dx11\xube.h" />
+    <ClInclude Include="..\..\wander.h" />
+    <ClInclude Include="xube.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\wander.cpp" />
-    <ClCompile Include="dx11\code.cpp" />
+    <ClCompile Include="..\..\wander.cpp" />
+    <ClCompile Include="code.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <CopyFileToFolders Include="dx11\shaders.hlsl">
+    <CopyFileToFolders Include="shaders.hlsl">
       <FileType>Document</FileType>
     </CopyFileToFolders>
   </ItemGroup>
   <ItemGroup>
-    <CopyFileToFolders Include="..\wasmtime\lib\wasmtime.dll">
+    <CopyFileToFolders Include="..\..\wasmtime\lib\wasmtime.dll">
       <FileType>Document</FileType>
     </CopyFileToFolders>
   </ItemGroup>
   <ItemGroup>
-    <CopyFileToFolders Include="Building.wasm">
+    <CopyFileToFolders Include="..\Building.wasm">
       <FileType>Document</FileType>
     </CopyFileToFolders>
   </ItemGroup>
