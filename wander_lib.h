@@ -14,6 +14,7 @@
 struct ID3D11Device;
 struct ID3D11DeviceContext;
 struct ID3D11Buffer;
+struct ID3D11Texture2D;
 
 typedef unsigned int GLuint;
 
@@ -24,6 +25,7 @@ class Pal : public IPal
 {
 public:  // TODO: Replace with std::span
 	virtual ObjectID CreateBuffer(BufferDescriptor desc, int length, uint8_t data[]) = 0;
+	virtual ObjectID CreateTexture(BufferDescriptor desc, int length, uint8_t data[]) = 0;
 	virtual void DeleteBuffer(ObjectID buffer_id) = 0;
 
 	virtual void DrawTriangleList(ObjectID buffer_id, int offset, int length, unsigned int stride) = 0;
@@ -46,12 +48,14 @@ public:
 	}
 
 	ObjectID CreateBuffer(BufferDescriptor desc, int length, uint8_t data[]) override;
+	ObjectID CreateTexture(BufferDescriptor desc, int length, uint8_t data[]) override;
 	void DeleteBuffer(ObjectID buffer_id) override;
 
 	void DrawTriangleList(ObjectID buffer_id, int offset, int length, unsigned int stride) override;
 
 private:
 	std::vector<ID3D11Buffer*> m_buffers;
+	std::vector<ID3D11Texture2D*> m_textures;
 
 	ID3D11Device* m_device;
 	ID3D11DeviceContext* m_device_context;
@@ -71,6 +75,7 @@ public:
 	}
 
 	ObjectID CreateBuffer(BufferDescriptor desc, int length, uint8_t data[]) override;
+	ObjectID CreateTexture(BufferDescriptor desc, int length, uint8_t data[]) override;
 	void DeleteBuffer(ObjectID buffer_id) override;
 
 	void DrawTriangleList(ObjectID buffer_id, int offset, int length, unsigned int stride) override;
@@ -78,6 +83,7 @@ public:
 private:
 	std::vector<GLuint> m_vbos;
 	std::vector<GLuint> m_vaos;
+	std::vector<GLuint> m_texs;
 
 	void *m_context;
 };

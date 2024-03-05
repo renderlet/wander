@@ -29,10 +29,35 @@ enum class BufferType
 	Texture2D
 };
 
+enum class BufferFormat
+{
+	Unknown,
+	Custom,
+	CustomVertex,
+	Index16,
+	Index32,
+	R8,
+	RG8,
+	RGB8,
+	RGBA8,
+	R16F,
+	RG16F,
+	RGB16F,
+	RGBA16F,
+	R32F,
+	RG32F,
+	RGB32F,
+	RGBA32F
+};
+
 class BufferDescriptor
 {
 public:
-	BufferDescriptor(BufferType type) : m_type(type)
+	BufferDescriptor(BufferType type, 
+		BufferFormat format = BufferFormat::Custom,
+		int width = 0, int height = 0, int depth = 0) :
+		m_type(type), m_format(format),
+		m_width(width), m_height(height), m_depth(depth)
 	{
 	}
 
@@ -41,8 +66,32 @@ public:
 		return m_type;
 	}
 
+	BufferFormat Format() const
+	{
+		return m_format;
+	}
+
+	int Width() const
+	{
+		return m_width;
+	}
+
+	int Height() const
+	{
+		return m_height;
+	}
+
+	int Depth() const
+	{
+		return m_depth;
+	}
+
 private:
 	BufferType m_type;
+	BufferFormat m_format;
+	int m_width;
+	int m_height;
+	int m_depth;
 };
 
 

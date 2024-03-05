@@ -84,10 +84,101 @@ ObjectID PalD3D11::CreateBuffer(BufferDescriptor desc, int length, uint8_t data[
 		break;
 	}
 
-	if (m_device->CreateBuffer(&vbd, &vinitData, &m_buffers.back()))
+	if (m_device->CreateBuffer(&vbd, &vinitData, &m_buffers.back()) != 0)
 		return -1;
 
 	return m_buffers.size() - 1;
+}
+
+ObjectID PalD3D11::CreateTexture(BufferDescriptor desc, int length, uint8_t data[])
+{
+	m_textures.emplace_back(nullptr);
+
+	DXGI_FORMAT format{};
+	auto pitch = 0;
+
+	switch (desc.Format())
+	{
+	case BufferFormat::Unknown:
+	case BufferFormat::Custom:
+	case BufferFormat::CustomVertex:
+	case BufferFormat::Index16:
+	case BufferFormat::Index32:
+	default:
+		return -1;
+	case BufferFormat::R8:
+		format = DXGI_FORMAT_R8_UNORM;
+		pitch = 1;
+		break;
+	case BufferFormat::RG8:
+		format = DXGI_FORMAT_R8G8_UNORM;
+		pitch = 2;
+		break;
+	case BufferFormat::RGB8:
+		format = DXGI_FORMAT_R8G8B8A8_UNORM;
+		pitch = 3; // legacy
+		break;
+	case BufferFormat::RGBA8:
+		format = DXGI_FORMAT_R8G8B8A8_UNORM;
+		pitch = 4;
+		break;
+	case BufferFormat::R16F:
+		format = DXGI_FORMAT_R16_FLOAT;
+		pitch = 2;
+		break;
+	case BufferFormat::RG16F:
+		format = DXGI_FORMAT_R16G16_FLOAT;
+		pitch = 4;
+		break;
+	case BufferFormat::RGB16F:
+		format = DXGI_FORMAT_R16G16B16A16_FLOAT;
+		pitch = 6;  // legacy
+		break;
+	case BufferFormat::RGBA16F:
+		format = DXGI_FORMAT_R16G16B16A16_FLOAT;
+		pitch = 8;
+		break;
+	case BufferFormat::R32F:
+		format = DXGI_FORMAT_R32_FLOAT;
+		pitch = 4;
+		break;
+	case BufferFormat::RG32F:
+		format = DXGI_FORMAT_R32G32_FLOAT;
+		pitch = 8;
+		break;
+	case BufferFormat::RGB32F:
+		format = DXGI_FORMAT_R32G32B32_FLOAT;
+		pitch = 12;
+		break;
+	case BufferFormat::RGBA32F:
+		format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+		pitch = 16;
+		break;
+	}
+
+	// Copy into a texture.
+	D3D11_TEXTURE2D_DESC texDesc;
+	texDesc.Width = desc.Width();
+	texDesc.Height = desc.Height();
+	texDesc.MipLevels = 1;
+	texDesc.ArraySize = 1;
+	texDesc.Format = format;
+	texDesc.SampleDesc.Count = 1;
+	texDesc.SampleDesc.Quality = 0;
+	texDesc.Usage = D3D11_USAGE_IMMUTABLE;
+	texDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+	texDesc.CPUAccessFlags = 0;
+	texDesc.MiscFlags = 0;
+
+	D3D11_SUBRESOURCE_DATA sub;
+	sub.pSysMem = data;
+	sub.SysMemPitch = pitch;
+	sub.SysMemSlicePitch = 0; // no array support yet
+
+	if (m_device->CreateTexture2D(&texDesc, &sub, &m_textures.back()))
+		return -1;
+
+	return m_textures.size() - 1;
 }
 
 void PalD3D11::DeleteBuffer(ObjectID buffer_id)
@@ -113,8 +204,7 @@ ObjectID PalOpenGL::CreateBuffer(BufferDescriptor desc, int length, uint8_t data
 		break;
 	case BufferType::Index:
 	case BufferType::Texture2D:
-		exit_with_error("PalOpenGL only currently supports BufferType::Vertex",
-			nullptr, nullptr);
+		CreateTexture(desc, length, data);
 		break;
 	}
 
@@ -131,7 +221,86 @@ ObjectID PalOpenGL::CreateBuffer(BufferDescriptor desc, int length, uint8_t data
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
 	m_vaos.emplace_back(vao);
 
-	return 0;
+	return m_vaos.size() - 1;
+}
+
+ObjectID PalOpenGL::CreateTexture(BufferDescriptor desc, int length, uint8_t data[])
+{
+	GLenum format{};
+	GLenum type{};
+
+	switch (desc.Format())
+	{
+	case BufferFormat::Unknown:
+	case BufferFormat::Custom:
+	case BufferFormat::CustomVertex:
+	case BufferFormat::Index16:
+	case BufferFormat::Index32:
+		return -1;
+	case BufferFormat::R8:
+		format = GL_UNSIGNED_BYTE;
+		type = GL_RED;
+		break;
+	case BufferFormat::RG8:
+		format = GL_UNSIGNED_BYTE;
+		type = GL_RG;
+		break;
+	case BufferFormat::RGB8:
+		format = GL_UNSIGNED_BYTE;
+		type = GL_RGB;
+		break;
+	case BufferFormat::RGBA8:
+		format = GL_UNSIGNED_BYTE;
+		type = GL_RGBA;
+		break;
+	case BufferFormat::R16F:
+		format = GL_HALF_FLOAT;
+		type = GL_RED;
+		break;
+	case BufferFormat::RG16F:
+		format = GL_HALF_FLOAT;
+		type = GL_RG;
+		break;
+	case BufferFormat::RGB16F:
+		format = GL_HALF_FLOAT;
+		type = GL_RGB;
+		break;
+	case BufferFormat::RGBA16F:
+		format = GL_HALF_FLOAT;
+		type = GL_RGBA;
+		break;
+	case BufferFormat::R32F:
+		format = GL_FLOAT;
+		type = GL_RED;
+		break;
+	case BufferFormat::RG32F:
+		format = GL_FLOAT;
+		type = GL_RG;
+		break;
+	case BufferFormat::RGB32F:
+		format = GL_FLOAT;
+		type = GL_RGB;
+		break;
+	case BufferFormat::RGBA32F:
+		format = GL_FLOAT;
+		type = GL_RGBA;
+		break;
+	default:
+		return -1;
+	}
+
+	// don't (yet) support tex arrays
+	unsigned int texture;
+	glGenTextures(1, &texture);
+	glBindTexture(GL_TEXTURE_2D, texture);
+
+	glTexImage2D(GL_TEXTURE_2D, 0, type, 
+		desc.Width(), desc.Height(), 0, type, format, data);
+	glGenerateMipmap(GL_TEXTURE_2D);
+
+	m_texs.emplace_back(texture);
+
+	return m_texs.size() - 1;
 }
 
 void PalOpenGL::DeleteBuffer(ObjectID buffer_id)
