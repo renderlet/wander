@@ -118,7 +118,7 @@ float f = 90.0f; // far
 
 float3 modelRotation = {0.0f, 0.0f, 0.0f};
 float3 modelScale = {0.8f, 0.8f, 0.8f};
-float3 modelTranslation = {-3.0f, 4.0f, 0.0f};
+float3 modelTranslation = {-3.0f, -8.0f, -15.0f};
 
 static void
 render(struct graphics_context *context)
@@ -150,6 +150,7 @@ render(struct graphics_context *context)
     modelRotation.z += 0.01f;
 
 	matrix Transform = rotateX * rotateY * rotateZ * scale * translate;
+	//matrix Transform = scale * translate;
 
     glm::mat4 Projection = glm::perspective(90.0f, 3.0f / 3.0f, 0.1f, 1000.f);
 
@@ -313,7 +314,7 @@ int main(int argc, char **argv)
 	const auto pal = wander::Factory::CreatePal(wander::EPalType::OpenGL, (void*)context.window);
 	context.runtime = wander::Factory::CreateRuntime(pal);
 
-	auto renderlet_id = context.runtime->LoadFromFile(L"Building.wasm", "run");
+	auto renderlet_id = context.runtime->LoadFromFile(L"Building.wasm", "start");
 
 	auto tree_id = context.runtime->Render(renderlet_id);
 	context.tree = context.runtime->GetRenderTree(tree_id);

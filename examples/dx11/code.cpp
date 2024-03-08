@@ -308,7 +308,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         wander::EPalType::D3D11, baseDevice, baseDeviceContext);
 	auto runtime = wander::Factory::CreateRuntime(pal);
 
-    auto renderlet_id = runtime->LoadFromFile(L"Building.wasm", "run");
+    auto renderlet_id = runtime->LoadFromFile(L"Building.wasm", "start");
 
 	auto tree_id = runtime->Render(renderlet_id);
 	auto tree = runtime->GetRenderTree(tree_id);
