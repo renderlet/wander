@@ -7,12 +7,23 @@
 // Required for wasmtime (missing header)
 #include <string>
 #include <vector>
-#include "wasmtime.hh"
+#include "wasmtime.h"
+
 
 #ifdef _WIN64
 // TODO - move to wander lib
 #pragma comment(lib, "wasmtime.dll.lib")
 #endif
+
+int fopen_s(FILE **f, const char *name, const char *mode) {
+    int ret = 0;
+    assert(f);
+    *f = fopen(name, mode);
+    /* Can't be sure about 1-to-1 mapping of errno and MS' errno_t */
+    if (!*f)
+        ret = errno;
+    return ret;
+}
 
 static void exit_with_error(const char *message, wasmtime_error_t *error, wasm_trap_t *trap)
 {
