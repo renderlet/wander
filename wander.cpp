@@ -6,10 +6,10 @@
 #include <string>
 #include "wasmtime.hh"
 
-#include <d3d11.h>
 #include <gl3w.c>
 
 #ifdef _WIN32
+#include <d3d11.h>
 #pragma comment(lib, "OpenGL32.lib")
 #endif
 
@@ -58,6 +58,8 @@ auto split_fixed(char separator, std::string_view input)
 		throw std::invalid_argument("too many parts to split");
 	return results;
 }
+
+#ifdef _WIN32
 
 ObjectID PalD3D11::CreateBuffer(BufferDescriptor desc, int length, uint8_t data[])
 {
@@ -195,6 +197,8 @@ void PalD3D11::DrawTriangleList(ObjectID buffer_id, int offset, int length, unsi
 	m_device_context->IASetVertexBuffers(0, 1, &m_buffers[buffer_id], &strides, &offsets);
 	m_device_context->Draw(length, offset);
 }
+
+#endif
 
 ObjectID PalOpenGL::CreateBuffer(BufferDescriptor desc, int length, uint8_t data[])
 {
@@ -614,8 +618,10 @@ IPal* Factory::CreatePal(EPalType type, ARGs &&...args)
 {
 	switch (type)
 	{
+#ifdef _WIN32
 	case EPalType::D3D11:
 		return construct<PalD3D11, ARGs...>(std::forward<ARGs>(args)...);
+#endif
 	case EPalType::OpenGL:
 	default:
 		return construct<PalOpenGL, ARGs...>(std::forward<ARGs>(args)...);
@@ -631,6 +637,7 @@ IRuntime* Factory::CreateRuntime(IPal *pal)
 
 template class wander::IPal *__cdecl wander::Factory::CreatePal<void *>(enum wander::EPalType, void *&&);
 
+#ifdef _WIN32
 template class wander::IPal *__cdecl wander::Factory::CreatePal<struct ID3D11Device *&, struct ID3D11DeviceContext *&>(
 	enum wander::EPalType, struct ID3D11Device *&, struct ID3D11DeviceContext *&);
-
+#endif

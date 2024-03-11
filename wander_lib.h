@@ -32,6 +32,8 @@ public:  // TODO: Replace with std::span
 };
 
 
+#ifdef _WIN32
+
 class PalD3D11 : public Pal
 {
 public:
@@ -60,6 +62,8 @@ private:
 	ID3D11Device* m_device;
 	ID3D11DeviceContext* m_device_context;
 };
+
+#endif
 
 
 class PalOpenGL : public Pal
