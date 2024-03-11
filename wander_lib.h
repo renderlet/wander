@@ -9,7 +9,7 @@
 // TODO - this should only be a private dependency
 // Required for wasmtime (missing header)
 #include <string>
-#include "wasmtime.hh"
+#include "wasmtime.h"
 
 struct ID3D11Device;
 struct ID3D11DeviceContext;
