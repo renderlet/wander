@@ -1,10 +1,9 @@
 #include "wander_lib.h"
 
-#include <codecvt>
+#include <array>
 #include <sstream>
-
-// Required for wasmtime (missing header)
 #include <string>
+#include <string_view>
 #include "wasmtime.h"
 
 #include <gl3w.c>
@@ -15,6 +14,12 @@
 #endif
 
 using namespace wander;
+
+
+#ifndef _WIN32
+
+#define _SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING
+#include <codecvt>
 
 // convert wstring to UTF-8 string
 std::string wstring_to_utf8 (const std::wstring& str)
@@ -32,6 +37,8 @@ int _wfopen_s(FILE **f, const wchar_t *name, const wchar_t *mode) {
         ret = errno;
     return ret;
 }
+
+#endif
 
 static void exit_with_error(const char *message, wasmtime_error_t *error, wasm_trap_t *trap)
 {
