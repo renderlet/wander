@@ -38,7 +38,10 @@ __declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
 
 #define countof(x) (sizeof(x) / sizeof(0[x]))
 
+#ifndef M_PI
 #define M_PI 3.141592653589793
+#endif
+
 #define ATTRIB_POINT 0
 
 static GLuint
@@ -314,7 +317,7 @@ int main(int argc, char **argv)
 	const auto pal = wander::Factory::CreatePal(wander::EPalType::OpenGL, (void*)context.window);
 	context.runtime = wander::Factory::CreateRuntime(pal);
 
-	auto renderlet_id = context.runtime->LoadFromFile(L"Building.wasm", "start");
+	auto renderlet_id = context.runtime->LoadFromFile(L"../Building.wasm", "start");
 
 	auto tree_id = context.runtime->Render(renderlet_id);
 	context.tree = context.runtime->GetRenderTree(tree_id);

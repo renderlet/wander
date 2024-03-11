@@ -1,10 +1,11 @@
 #include "wander_lib.h"
 
+#include <codecvt>
 #include <sstream>
 
 // Required for wasmtime (missing header)
 #include <string>
-#include "wasmtime.hh"
+#include "wasmtime.h"
 
 #include <gl3w.c>
 
@@ -14,6 +15,23 @@
 #endif
 
 using namespace wander;
+
+// convert wstring to UTF-8 string
+std::string wstring_to_utf8 (const std::wstring& str)
+{
+    std::wstring_convert<std::codecvt_utf8<wchar_t>> myconv;
+    return myconv.to_bytes(str);
+}
+
+int _wfopen_s(FILE **f, const wchar_t *name, const wchar_t *mode) {
+    int ret = 0;
+    assert(f);
+    *f = fopen(wstring_to_utf8(name).c_str(), wstring_to_utf8(mode).c_str());
+    /* Can't be sure about 1-to-1 mapping of errno and MS' errno_t */
+    if (!*f)
+        ret = errno;
+    return ret;
+}
 
 static void exit_with_error(const char *message, wasmtime_error_t *error, wasm_trap_t *trap)
 {
