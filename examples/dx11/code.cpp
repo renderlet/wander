@@ -1,5 +1,6 @@
 
 #pragma comment(lib, "user32")
+#pragma comment(lib, "urlmon.lib")
 #pragma comment(lib, "d3d11")
 #pragma comment(lib, "d3dcompiler")
 
@@ -308,7 +309,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         wander::EPalType::D3D11, baseDevice, baseDeviceContext);
 	auto runtime = wander::Factory::CreateRuntime(pal);
 
-    auto renderlet_id = runtime->LoadFromFile(L"Building.wasm", "start");
+    std::wstring dwnld_URL = L"https://rltdemoapi2.azurewebsites.net/compiler/output";
+	std::wstring savepath = L"demo.rlt";
+	URLDownloadToFile(NULL, dwnld_URL.c_str(), savepath.c_str(), 0, NULL);
+
+    auto renderlet_id = runtime->LoadFromFile(L"demo.rlt", "start");
 
 	auto tree_id = runtime->Render(renderlet_id);
 	auto tree = runtime->GetRenderTree(tree_id);
