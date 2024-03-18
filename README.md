@@ -1,8 +1,7 @@
 # wander
 
-![wander-dark](https://github.com/renderlet/wander/assets/11962123/c0adc937-b25a-4413-9e57-6adf9faa9cd1#gh-dark-mode-only)
-![wander-light](https://github.com/renderlet/wander/assets/11962123/c38c11d6-2b03-4d89-be36-2081ace9b71b#gh-light-mode-only)
-
+![logo light](/docs/wander-light.png#gh-light-mode-only)
+![logo dark](/docs/wander-dark.png#gh-dark-mode-only)
 
 wander - the Wasm Renderer
 
@@ -163,8 +162,8 @@ The host app must know the "shape" of the data and bind a shader stage to the ho
 
 Example - CAD, where arbitrary parts can generate geometry of a known format that the host app has the capability to shade
 
-![current-light](https://github.com/renderlet/wander/assets/11962123/2e1fe0a0-4d1a-4f10-9313-7ab0b0031ca6#gh-light-mode-only)
-![current-dark](https://github.com/renderlet/wander/assets/11962123/be018975-6035-4e1d-8789-3c511168d0a6#gh-dark-mode-only)
+![v1 light](/docs/v1-light.png#gh-light-mode-only)
+![v1 dark](/docs/v1-dark.png#gh-dark-mode-only)
 
 Future (V2) architecture allows arbitrary data to be fully rendered to an application's back buffer / canvas via an attachment to the graphics API exposed to Wasm.
 
@@ -172,5 +171,5 @@ V2 will enable fully arbitrary rendering of any data onto any Canvas. V2 has a d
 
 Example - Full 3rd-party UGC/Content - Rendering arbitrary 2D gauges (like Flash) / 3D content (avatars) onto an existing Canvas layer in an app
 
-![future-dark](https://github.com/renderlet/wander/assets/11962123/d59a7452-f830-4291-9a33-03e5a69c60de#gh-dark-mode-only)
-![future-light](https://github.com/renderlet/wander/assets/11962123/f0ac7d6f-f5f6-4260-9be2-f9d6d044f9e2#gh-light-mode-only)
+![v2 light](/docs/v2-light.png#gh-light-mode-only)
+![v2 dark](/docs/v2-dark.png#gh-dark-mode-only)
