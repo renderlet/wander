@@ -3,6 +3,8 @@
 #include <array>
 #include <sstream>
 #include <string>
+#include <locale>
+#include <algorithm>
 #include <string_view>
 #include "wasmtime.h"
 
