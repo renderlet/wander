@@ -96,7 +96,25 @@ runtime->Release();
 
 Basic examples are provided in the [examples folder](examples/) for D3D11 and OpenGL.
 
-The OpenGL build is not yet tested on Mac/Linux but should work with basic dependencies.
+The OpenGL build is not yet tested on Mac but should work with basic dependencies.
+
+#### Building the examples
+
+##### On Linux
+
+First, build the build container. From the repository root:
+
+```sh
+podman build -t wander/buildimage -f ./Dockerfile
+```
+
+Then, use this container to build or rebuild the examples. To build the OpenGL example on Linux:
+
+```sh
+podman run --mount=type=bind,source="$(pwd)",target=/src,relabel=shared,U=true -w /src/examples/OpenGL wander/buildimage make buildlinux
+```
+
+This should produce a new `opengl` binary under `/src/examples/OpenGL`. Take a look at the `Makefile` for more info.
 
 ### :warning: Building renderlets
 
