@@ -1,7 +1,7 @@
 # wander
 
-![logo light](/docs/wander-light.png#gh-light-mode-only)
-![logo dark](/docs/wander-dark.png#gh-dark-mode-only)
+![logo light](/docs/wander-light.svg#gh-light-mode-only)
+![logo dark](/docs/wander-dark.svg#gh-dark-mode-only)
 
 wander - the Wasm Renderer
 
