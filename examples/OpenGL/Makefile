@@ -46,3 +46,6 @@ build:
 
 clean: 
 	rm -f $(target) $(objects)
+
+run: build
+	./opengl
