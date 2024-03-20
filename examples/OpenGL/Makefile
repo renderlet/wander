@@ -37,7 +37,7 @@ target = opengl
 CXXFLAGS = $(includes) $(options)  
 
 buildlinux: $(objects)
-	$(clang) $(objects) `pkg-config --libs --static glx` $(link) -o $(target) 
+	$(clang) $(objects) `pkg-config --libs glx` $(link) -o $(target) 
 
 build:
 	$(clang) $(includes) $(includesextra) \
