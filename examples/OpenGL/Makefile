@@ -7,7 +7,7 @@ link := glfw/lib-arm64/libglfw3.a ../../wasmtime/lib/libwasmtime.a \
 
 build:
 	$(clang) $(includes) $(options) $(link) \
-	   -o opengl demo.cpp ../../wander.cpp
+	   -o opengl bmpread.c demo.cpp ../../wander.cpp
 
 run: build
 	./opengl
