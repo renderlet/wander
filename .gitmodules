@@ -1,0 +1,3 @@
+[submodule "libs/rive-renderer"]
+	path = libs/rive-renderer
+	url = https://github.com/renderlet/rive-renderer.git

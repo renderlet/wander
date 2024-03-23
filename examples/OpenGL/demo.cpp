@@ -13,6 +13,8 @@
 
 #include "wander.h"
 
+#include "bmpread.h"
+
 #ifdef _WIN32
 
 #pragma comment(lib, "OpenGL32.lib")
@@ -89,6 +91,9 @@ struct graphics_context {
 	GLint uniform_projection;
     GLuint vbo_point;
     GLuint vao_point;
+    GLuint texture_window;
+    GLuint texture_roof;
+    GLuint texture_white;
     double angle;
     long framecount;
     double lastframe;
@@ -152,19 +157,48 @@ render(struct graphics_context *context)
     modelRotation.y += 0.009f;
     modelRotation.z += 0.01f;
 
-	matrix Transform = rotateX * rotateY * rotateZ * scale * translate;
-	//matrix Transform = scale * translate;
+	//matrix Transform = rotateX * rotateY * rotateZ * scale * translate;
+	matrix Transform = rotateY * scale * translate;
 
     glm::mat4 Projection = glm::perspective(90.0f, 3.0f / 3.0f, 0.1f, 1000.f);
 
     glUniformMatrix4fv(context->uniform_transform, 1, GL_FALSE, (GLfloat *)Transform.m);
 	glUniformMatrix4fv(context->uniform_projection, 1, GL_FALSE, glm::value_ptr(Projection)); 
 
+    
+
     glDisable(GL_CULL_FACE);
+
+    
 
     for (auto i = 0; i < context->tree->Length(); ++i)
 	{
-		context->tree->NodeAt(i)->RenderFixedStride(context->runtime, sizeof(GLfloat) * 11);
+        auto node = context->tree->NodeAt(i);
+        if (node->Metadata().find("roof") != std::string::npos)
+        {
+            //printf("texture %d", context->texture_roof);
+            //glBindTexture(GL_TEXTURE_2D, context->texture_roof);
+            glActiveTexture(GL_TEXTURE0); // activate the texture unit first before binding texture
+            glBindTexture(GL_TEXTURE_2D, context->texture_roof);
+        }
+        else if (node->Metadata().find("window") != std::string::npos)
+        {
+            //printf("texture %d", context->texture_window);
+            glActiveTexture(GL_TEXTURE0); // activate the texture unit first before binding texture
+            glBindTexture(GL_TEXTURE_2D, context->texture_window);
+        }
+        else
+        {
+            glActiveTexture(GL_TEXTURE0); // activate the texture unit first before binding texture
+            glBindTexture(GL_TEXTURE_2D, context->texture_white);
+        }
+        
+        //glBindTexture(GL_TEXTURE_2D, context->texture_window);
+
+        //glUniform1i(glGetUniformLocation(context->program_wasm, "ourTexture"), 0); // set it manually
+
+		node->RenderFixedStride(context->runtime, sizeof(GLfloat) * 11);
+        //abort();
 	}
 
 	glUseProgram(0);
@@ -216,8 +250,8 @@ int main(int argc, char **argv)
     }
 
     glfwWindowHint(GLFW_SAMPLES, 4);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
     glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
@@ -237,7 +271,7 @@ int main(int argc, char **argv)
 
     /* Shader sources */
     const GLchar *vert_shader =
-        "#version 330\n"
+        "#version 410\n"
         "layout(location = 0) in vec2 point;\n"
         "uniform float angle;\n"
         "void main() {\n"
@@ -246,14 +280,14 @@ int main(int argc, char **argv)
         "    gl_Position = vec4(0.75 * rotate * point, 0.99, 1.0);\n"
         "}\n";
     const GLchar *frag_shader =
-        "#version 330\n"
+        "#version 410\n"
         "out vec4 color;\n"
         "void main() {\n"
         "    color = vec4(1, 0.15, 0.15, 0);\n"
         "}\n";
 
     const GLchar *vert_shader_wasm = 
-        "#version 330\n"
+        "#version 410\n"
 	    "#extension GL_ARB_separate_shader_objects : require \n"
 		"layout(location = 0) in vec3 vs_position;\n"
 		"layout(location = 1) in vec3 vs_normal;\n"
@@ -271,14 +305,16 @@ int main(int argc, char **argv)
 		"}\n";
 
     const GLchar *frag_shader_wasm = 
-        "#version 330\n"
+        "#version 410\n"
 		"#extension GL_ARB_separate_shader_objects : require \n"
+        "uniform sampler2D ourTexture;\n"
 		"out vec4 out_color;\n"
 		"layout(location = 0) in vec2 ps_texcoord;\n"
 		"layout(location = 1) in vec4 ps_color;\n"
 		"void main()\n"
 		"{\n"
-		"    out_color = ps_color;\n"
+        "    out_color = texture(ourTexture, ps_texcoord) * ps_color;\n"
+		"    //out_color = ps_color;\n"
 		"}\n";
 
     /* Compile and link OpenGL program */
@@ -313,6 +349,59 @@ int main(int argc, char **argv)
     glBindVertexArray(0);
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
+
+
+    unsigned int TextureDataWhite[] = // 1x1 pixel white
+    {
+        0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
+        0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
+        0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
+        0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff
+    };
+
+    glGenTextures(1, &context.texture_white);
+    glBindTexture(GL_TEXTURE_2D, context.texture_white);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);  
+    //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 4, 4, 0,
+                 GL_RGBA, GL_UNSIGNED_BYTE, TextureDataWhite);
+
+    
+
+    bmpread_t bitmap;
+
+    bmpread("window.bmp", BMPREAD_ANY_SIZE, &bitmap);
+
+    glGenTextures(1, &context.texture_window);
+    glBindTexture(GL_TEXTURE_2D, context.texture_window);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);  
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, bitmap.width, bitmap.height, 0, GL_RGB, GL_UNSIGNED_BYTE, bitmap.data);
+
+    //glTexImage2D(GL_TEXTURE_2D, 0, 4, bitmap.width, bitmap.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, bitmap.data);
+    //printf("%d, %d \n", bitmap.width, bitmap.height);
+    //bmpread_free(&bitmap);
+
+    bmpread_t bitmap2;
+
+    bmpread("roof2.bmp", BMPREAD_ANY_SIZE , &bitmap2);
+
+    glGenTextures(1, &context.texture_roof);
+    glBindTexture(GL_TEXTURE_2D, context.texture_roof);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);  
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, bitmap2.width, bitmap2.height, 0,
+                 GL_RGB, GL_UNSIGNED_BYTE, bitmap2.data);
+
+    //bmpread_free(&bitmap2);
 
 	const auto pal = wander::Factory::CreatePal(wander::EPalType::OpenGL, (void*)context.window);
 	context.runtime = wander::Factory::CreateRuntime(pal);
