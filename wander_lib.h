@@ -5,6 +5,7 @@
 #include <ostream>
 #include <queue>
 #include <utility>
+#include <memory>
 
 // TODO - this should only be a private dependency
 // Required for wasmtime (missing header)

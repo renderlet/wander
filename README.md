@@ -1,4 +1,8 @@
 # wander
+
+![logo light](/docs/wander-light.svg#gh-light-mode-only)
+![logo dark](/docs/wander-dark.svg#gh-dark-mode-only)
+
 wander - the Wasm Renderer
 
 `wander` is a GPU-based rendering framework designed to be fully embeddable in any application.
@@ -96,7 +100,25 @@ runtime->Release();
 
 Basic examples are provided in the [examples folder](examples/) for D3D11 and OpenGL.
 
-The OpenGL build is not yet tested on Mac/Linux but should work with basic dependencies.
+The OpenGL build is not yet tested on Mac but should work with basic dependencies.
+
+#### Building the examples
+
+##### On Linux
+
+First, build the build container. From the repository root:
+
+```sh
+podman build -t wander/buildimage -f ./Dockerfile
+```
+
+Then, use this container to build or rebuild the examples. To build the OpenGL example on Linux:
+
+```sh
+podman run --mount=type=bind,source="$(pwd)",target=/src,relabel=shared,U=true -w /src/examples/OpenGL wander/buildimage make buildlinux
+```
+
+This should produce a new `opengl` binary under `/src/examples/OpenGL`. Take a look at the `Makefile` for more info.
 
 ### :warning: Building renderlets
 
@@ -140,7 +162,8 @@ The host app must know the "shape" of the data and bind a shader stage to the ho
 
 Example - CAD, where arbitrary parts can generate geometry of a known format that the host app has the capability to shade
 
-![image info](/docs/v1.png)
+![v1 light](/docs/v1-light.png#gh-light-mode-only)
+![v1 dark](/docs/v1-dark.png#gh-dark-mode-only)
 
 Future (V2) architecture allows arbitrary data to be fully rendered to an application's back buffer / canvas via an attachment to the graphics API exposed to Wasm.
 
@@ -148,4 +171,5 @@ V2 will enable fully arbitrary rendering of any data onto any Canvas. V2 has a d
 
 Example - Full 3rd-party UGC/Content - Rendering arbitrary 2D gauges (like Flash) / 3D content (avatars) onto an existing Canvas layer in an app
 
-![image info](/docs/v2.png)
+![v2 light](/docs/v2-light.png#gh-light-mode-only)
+![v2 dark](/docs/v2-dark.png#gh-dark-mode-only)
