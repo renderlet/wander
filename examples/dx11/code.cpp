@@ -16,8 +16,11 @@
 #include <d3d11_1.h>
 #include <d3dcompiler.h>
 
+#include <fstream>
 #include <math.h> // sin, cos
 #include "xube.h" // 3d model
+
+#include "bmpread.h"
 
 #include "wander.h"
 
@@ -158,7 +161,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
     D3D11_RASTERIZER_DESC1 rasterizerDesc = {};
     rasterizerDesc.FillMode = D3D11_FILL_SOLID;
-    rasterizerDesc.CullMode = D3D11_CULL_BACK;
+    rasterizerDesc.CullMode = D3D11_CULL_NONE;
 	rasterizerDesc.FrontCounterClockwise = false;
 
     ID3D11RasterizerState1* rasterizerState;
@@ -282,6 +285,66 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
+    bmpread_t bitmap;
+    /*
+    std::ifstream file("roof2.bmp", std::ios::binary | std::ios::ate);
+	std::streamsize size = file.tellg();
+	file.seekg(0, std::ios::beg);
+
+	std::vector<char> buffer(size);
+	file.read(&buffer[0], size);
+    */
+	//bmpread(buffer.data(), BMPREAD_TOP_DOWN | BMPREAD_ANY_SIZE, &bitmap);
+	bmpread("roof2.bmp", BMPREAD_TOP_DOWN | BMPREAD_ANY_SIZE  | BMPREAD_ALPHA, &bitmap);
+
+	textureDesc.Width = bitmap.width;
+	textureDesc.Height = bitmap.height;
+	textureDesc.MipLevels = 1;
+	textureDesc.ArraySize = 1;
+	textureDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	textureDesc.SampleDesc.Count = 1;
+	textureDesc.Usage = D3D11_USAGE_IMMUTABLE;
+	textureDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+
+	textureData.pSysMem = bitmap.data;
+	textureData.SysMemPitch = bitmap.width *4; // 4 bytes per pixel
+
+	ID3D11Texture2D *textureRoof;
+
+	device->CreateTexture2D(&textureDesc, &textureData, &textureRoof);
+
+	ID3D11ShaderResourceView *textureViewRoof;
+
+	device->CreateShaderResourceView(textureRoof, nullptr, &textureViewRoof);
+
+	///////////////////////////////////////////////////////////////////////////////////////////////
+
+	bmpread_t bitmap2;
+	bmpread("window.bmp", BMPREAD_TOP_DOWN | BMPREAD_ANY_SIZE | BMPREAD_ALPHA, &bitmap2);
+
+	textureDesc.Width = bitmap2.width;
+	textureDesc.Height = bitmap2.height;
+	textureDesc.MipLevels = 1;
+	textureDesc.ArraySize = 1;
+	textureDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	textureDesc.SampleDesc.Count = 1;
+	textureDesc.Usage = D3D11_USAGE_IMMUTABLE;
+	textureDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+
+	textureData.pSysMem = bitmap2.data;
+	textureData.SysMemPitch = bitmap2.width * 4; // 4 bytes per pixel
+
+	ID3D11Texture2D *textureWindow;
+
+	device->CreateTexture2D(&textureDesc, &textureData, &textureWindow);
+
+	ID3D11ShaderResourceView *textureViewWindow;
+
+	device->CreateShaderResourceView(textureWindow, nullptr, &textureViewWindow);
+
+	///////////////////////////////////////////////////////////////////////////////////////////////
+
+
     FLOAT backgroundColor[4] = { 0.025f, 0.025f, 0.025f, 1.0f };
 
     UINT stride = 11 * sizeof(float); // vertex size (11 floats: float3 position, float3 normal, float2 texcoord, float3 color)
@@ -314,6 +377,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	URLDownloadToFile(NULL, dwnld_URL.c_str(), savepath.c_str(), 0, NULL);
 
     auto renderlet_id = runtime->LoadFromFile(L"demo.rlt", "start");
+	//auto renderlet_id = runtime->LoadFromFile(L"Building.rlt", "start");
 
 	auto tree_id = runtime->Render(renderlet_id);
 	auto tree = runtime->GetRenderTree(tree_id);
@@ -414,11 +478,25 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         //ID3D11ShaderResourceView *nullSRV[1] = {nullptr};
 		//deviceContext->PSSetShaderResources(0, 1, nullSRV);
 
-        deviceContext->PSSetShaderResources(0, 1, &textureViewWhite);
+        
 
 		for (auto i = 0; i < tree->Length(); ++i)
 		{
-			tree->NodeAt(i)->RenderFixedStride(runtime, stride);
+			auto node = tree->NodeAt(i);
+			if (node->Metadata().find("roof") != std::string::npos)
+			{
+				deviceContext->PSSetShaderResources(0, 1, &textureViewRoof);
+			}
+			else if (node->Metadata().find("window") != std::string::npos)
+			{
+				deviceContext->PSSetShaderResources(0, 1, &textureViewWindow);
+			}
+			else
+			{
+				deviceContext->PSSetShaderResources(0, 1, &textureViewWhite);
+			}
+				
+             node->RenderFixedStride(runtime, stride);
 		}
 
         ///////////////////////////////////////////////////////////////////////////////////////////
