@@ -98,28 +98,28 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">
-    <IncludePath>$(SolutionDir)..\;$(SolutionDir)..\wasmtime\include;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)..\;$(SolutionDir)..\wasmtime\include;$(SolutionDir)..\libs\rive-renderer\submodules\rive-cpp\include;$(SolutionDir)..\libs\rive-renderer\include;$(IncludePath)</IncludePath>
     <SourcePath>$(SolutionDir)..\;$(SourcePath)</SourcePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">
-    <IncludePath>$(SolutionDir)..\;$(SolutionDir)..\wasmtime\include;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)..\;$(SolutionDir)..\wasmtime\include;$(SolutionDir)..\libs\rive-renderer\submodules\rive-cpp\include;$(SolutionDir)..\libs\rive-renderer\include;$(IncludePath)</IncludePath>
     <SourcePath>$(SolutionDir)..\;$(SourcePath)</SourcePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <IncludePath>$(SolutionDir)..\;$(SolutionDir)..\wasmtime\include;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)..\;$(SolutionDir)..\wasmtime\include;$(SolutionDir)..\libs\rive-renderer\submodules\rive-cpp\include;$(SolutionDir)..\libs\rive-renderer\include;$(IncludePath)</IncludePath>
     <SourcePath>$(SolutionDir)..\;$(SourcePath)</SourcePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <IncludePath>$(SolutionDir)..\;$(SolutionDir)..\wasmtime\include;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)..\;$(SolutionDir)..\wasmtime\include;$(SolutionDir)..\libs\rive-renderer\submodules\rive-cpp\include;$(SolutionDir)..\libs\rive-renderer\include;$(IncludePath)</IncludePath>
     <SourcePath>$(SolutionDir)..\;$(SourcePath)</SourcePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>$(SolutionDir)..\;$(SolutionDir)..\wasmtime\include;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)..\;$(SolutionDir)..\wasmtime\include;$(SolutionDir)..\libs\rive-renderer\submodules\rive-cpp\include;$(SolutionDir)..\libs\rive-renderer\include;$(IncludePath)</IncludePath>
     <SourcePath>$(SolutionDir)..\;$(SourcePath)</SourcePath>
     <LibraryPath>$(SolutionDir)..\wasmtime\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IncludePath>$(SolutionDir)..\;$(SolutionDir)..\wasmtime\include;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)..\;$(SolutionDir)..\wasmtime\include;$(SolutionDir)..\libs\rive-renderer\submodules\rive-cpp\include;$(SolutionDir)..\libs\rive-renderer\include;$(IncludePath)</IncludePath>
     <SourcePath>$(SolutionDir)..\;$(SourcePath)</SourcePath>
     <LibraryPath>$(SolutionDir)..\wasmtime\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
