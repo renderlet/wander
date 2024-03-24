@@ -10,7 +10,7 @@ ifdef WASMTIMEAPI
 else
   wasmtimeapi := ../../wasmtime
 endif
-libwasmtime := $(WASMTIMEAPI)/lib/libwasmtime.a
+libwasmtime := $(wasmtimeapi)/lib/libwasmtime.a
 
 ifdef GLFWLIB
   libglfw := $(GLFWLIB)/libglfw3.a
@@ -29,7 +29,7 @@ optionsextra := -stdlib=libc++
 includesextra := -I -Iglm -Iglfw/include
 linkextra := -framework Foundation -framework Cocoa -framework OpenGL -framework IOKit -framework CoreVideo
 
-sources = demo.cpp ../../wander.cpp
+sources = demo.cpp ../../wander.cpp bmpread.c
 objects = $(sources:.cpp=.o)
 target = opengl
 
