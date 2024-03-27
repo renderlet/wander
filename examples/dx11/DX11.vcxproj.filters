@@ -14,5 +14,6 @@
     <CopyFileToFolders Include="shaders.hlsl" />
     <CopyFileToFolders Include="..\..\wasmtime\lib\wasmtime.dll" />
     <CopyFileToFolders Include="..\Building.wasm" />
+    <CopyFileToFolders Include="..\Vector.rlt" />
   </ItemGroup>
 </Project>

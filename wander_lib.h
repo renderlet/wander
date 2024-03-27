@@ -144,6 +144,8 @@ public:
 
 private:
 
+	ObjectID BuildVector(ObjectID renderlet_id, uint32_t length, uint8_t *data);
+
 	struct WasmtimeContext
 	{
 		wasm_engine_t* Engine = nullptr;

@@ -487,6 +487,11 @@ void wander::Runtime::ResetStack(ObjectID renderlet_id)
 	m_params[renderlet_id] = {};
 }
 
+ObjectID wander::Runtime::BuildVector(const ObjectID renderlet_id, uint32_t length, uint8_t* data)
+{
+	return -1;
+}
+
 ObjectID wander::Runtime::Render(const ObjectID renderlet_id)
 {
 	std::vector<wasmtime_val_t> args(m_params[renderlet_id].size());
@@ -546,9 +551,14 @@ ObjectID wander::Runtime::Render(const ObjectID renderlet_id)
 	auto vert_format = *reinterpret_cast<uint32_t *>(output + 2 * sizeof(uint32_t));
 	auto verts = output + 3 * sizeof(uint32_t);
 
-	if (vert_format == 2)
+	if (vert_format == 3)
 	{
 		desc = {BufferType::Index};
+	}
+
+	if (vert_format == 2)
+	{
+		return BuildVector(renderlet_id, vert_length, verts);
 	}
 
 	auto id = m_pal->CreateBuffer(desc, vert_length, verts);

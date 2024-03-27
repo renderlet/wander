@@ -397,6 +397,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	auto tree_id = runtime->Render(renderlet_id);
 	auto tree = runtime->GetRenderTree(tree_id);
 
+    auto renderlet_id_vector = runtime->LoadFromFile(L"Vector.rlt", "vector");
+	runtime->PushParam(renderlet_id_vector, 1024.0f);
+	runtime->PushParam(renderlet_id_vector, 768.0f);
+	runtime->PushParam(renderlet_id_vector, 1.0f);
+	auto tree_id_vector = runtime->Render(renderlet_id_vector);
+	//auto tree_vector = runtime->GetRenderTree(tree_id_vector);
+
 	///////////////////////////////////////////////////////////////////////////////////////////////
 #ifdef _DEBUG
     pls::PLSRenderContextD3DImpl::ContextOptions contextOptions{};
