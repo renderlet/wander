@@ -29,7 +29,11 @@ public:  // TODO: Replace with std::span
 	virtual ObjectID CreateTexture(BufferDescriptor desc, int length, uint8_t data[]) = 0;
 	virtual void DeleteBuffer(ObjectID buffer_id) = 0;
 
+	virtual ObjectID CreateVector(int length, uint8_t data[]) = 0;
+
 	virtual void DrawTriangleList(ObjectID buffer_id, int offset, int length, unsigned int stride) = 0;
+
+	virtual void DrawVector(ObjectID buffer_id, int offset) = 0;
 };
 
 
@@ -54,7 +58,11 @@ public:
 	ObjectID CreateTexture(BufferDescriptor desc, int length, uint8_t data[]) override;
 	void DeleteBuffer(ObjectID buffer_id) override;
 
+	ObjectID CreateVector(int length, uint8_t data[]) override;
+
 	void DrawTriangleList(ObjectID buffer_id, int offset, int length, unsigned int stride) override;
+
+	void DrawVector(ObjectID buffer_id, int offset) override;
 
 private:
 	std::vector<ID3D11Buffer*> m_buffers;
@@ -83,7 +91,11 @@ public:
 	ObjectID CreateTexture(BufferDescriptor desc, int length, uint8_t data[]) override;
 	void DeleteBuffer(ObjectID buffer_id) override;
 
+	ObjectID CreateVector(int length, uint8_t data[]) override;
+
 	void DrawTriangleList(ObjectID buffer_id, int offset, int length, unsigned int stride) override;
+
+	void DrawVector(ObjectID buffer_id, int offset) override;
 
 private:
 	std::vector<GLuint> m_vbos;
@@ -144,7 +156,7 @@ public:
 
 private:
 
-	ObjectID BuildVector(ObjectID renderlet_id, uint32_t length, uint8_t *data);
+	ObjectID BuildVector(uint32_t length, uint8_t *data);
 
 	struct WasmtimeContext
 	{

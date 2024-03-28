@@ -42,6 +42,10 @@ int _wfopen_s(FILE **f, const wchar_t *name, const wchar_t *mode) {
 
 #endif
 
+#ifdef RLT_RIVE
+
+#endif
+
 static void exit_with_error(const char *message, wasmtime_error_t *error, wasm_trap_t *trap)
 {
 	fprintf(stderr, "error: %s\n", message);
@@ -212,7 +216,13 @@ ObjectID PalD3D11::CreateTexture(BufferDescriptor desc, int length, uint8_t data
 
 void PalD3D11::DeleteBuffer(ObjectID buffer_id)
 {
-	m_buffers[buffer_id]->Release();
+	if (buffer_id != -1)
+		m_buffers[buffer_id]->Release();
+}
+
+ObjectID PalD3D11::CreateVector(int length, uint8_t data[])
+{
+	return -1;
 }
 
 void PalD3D11::DrawTriangleList(ObjectID buffer_id, int offset, int length, unsigned int stride)
@@ -223,6 +233,10 @@ void PalD3D11::DrawTriangleList(ObjectID buffer_id, int offset, int length, unsi
 	m_device_context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	m_device_context->IASetVertexBuffers(0, 1, &m_buffers[buffer_id], &strides, &offsets);
 	m_device_context->Draw(length, offset);
+}
+
+void PalD3D11::DrawVector(ObjectID buffer_id, int offset)
+{
 }
 
 #endif
@@ -338,6 +352,16 @@ void PalOpenGL::DeleteBuffer(ObjectID buffer_id)
 {
 	glDeleteVertexArrays(1, &m_vaos[buffer_id]);
 	glDeleteBuffers(1, &m_vbos[buffer_id]);
+}
+
+ObjectID PalOpenGL::CreateVector(int length, uint8_t data[])
+{
+	return -1;
+}
+
+void wander::PalOpenGL::DrawVector(ObjectID buffer_id, int offset)
+{
+
 }
 
 void PalOpenGL::DrawTriangleList(ObjectID buffer_id, int offset, int length, unsigned stride)
@@ -487,8 +511,17 @@ void wander::Runtime::ResetStack(ObjectID renderlet_id)
 	m_params[renderlet_id] = {};
 }
 
-ObjectID wander::Runtime::BuildVector(const ObjectID renderlet_id, uint32_t length, uint8_t* data)
+ObjectID wander::Runtime::BuildVector(uint32_t length, uint8_t* data)
 {
+	std::vector<RenderTreeNode> nodes;
+
+	auto id = m_pal->CreateVector(length, data);
+
+	auto node = RenderTreeNode{id, BufferType::Texture2D, "", 0, 0};
+
+	nodes.push_back(node);
+
+	m_render_trees.push_back(std::make_unique<RenderTree>(nodes));
 	return -1;
 }
 
@@ -558,7 +591,7 @@ ObjectID wander::Runtime::Render(const ObjectID renderlet_id)
 
 	if (vert_format == 2)
 	{
-		return BuildVector(renderlet_id, vert_length, verts);
+		return BuildVector(vert_length, verts);
 	}
 
 	auto id = m_pal->CreateBuffer(desc, vert_length, verts);
@@ -568,7 +601,6 @@ ObjectID wander::Runtime::Render(const ObjectID renderlet_id)
 	auto mat = std::string(mats, mats + mat_length);
 
 	std::vector<RenderTreeNode> nodes;
-	
 
 	// TODO - binary going to be more efficient
 	std::string line;
@@ -580,7 +612,7 @@ ObjectID wander::Runtime::Render(const ObjectID renderlet_id)
 		int VertexOffset = atoi(values[1].data());
 		int VertexLength = atoi(values[2].data());
 
-		auto node = RenderTreeNode{id, line, VertexOffset, VertexLength};
+		auto node = RenderTreeNode{id, BufferType::Vertex, line, VertexOffset, VertexLength};
 
 		nodes.push_back(node);
 	}

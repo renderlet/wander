@@ -605,7 +605,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
         constants = reinterpret_cast<Constants*>(mappedSubresource.pData);
 
-        constants->Transform   = rotateX * rotateY * rotateZ * scale * translate;
+		auto mx = 1.57;
+        matrix rotateX2   = { 1, 0, 0, 0, 0, static_cast<float>(cos(mx)), -static_cast<float>(sin(mx)), 0, 0, static_cast<float>(sin(mx)), static_cast<float>(cos(mx)), 0, 0, 0, 0, 1 };
+#ifdef _DEBUG
+    	constants->Transform = rotateZ * rotateX2 * scale * translate;
+#else
+		constants->Transform = rotateX * rotateY * rotateZ * scale * translate;
+#endif
         constants->Projection  = { 2 * n / w, 0, 0, 0, 0, 2 * n / h, 0, 0, 0, 0, f / (f - n), 1, 0, 0, n * f / (n - f), 0 };
         constants->LightVector = { 1.0f, -1.0f, 1.0f };
 
