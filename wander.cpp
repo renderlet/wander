@@ -1,3 +1,9 @@
+#ifdef _WIN32
+#define RLT_RIVE
+#define _SILENCE_ALL_CXX20_DEPRECATION_WARNINGS
+#define NOMINMAX
+#endif
+
 #include "wander_lib.h"
 
 #include <array>
@@ -9,6 +15,8 @@
 #include "wasmtime.h"
 
 #include <gl3w.c>
+
+
 
 #ifdef _WIN32
 #include <d3d11.h>
@@ -42,8 +50,23 @@ int _wfopen_s(FILE **f, const wchar_t *name, const wchar_t *mode) {
 
 #endif
 
-#ifdef RLT_RIVE
+#if defined(RLT_RIVE) && defined(_WIN32)
+#pragma comment(lib, "rive_pls_renderer.lib")
+#pragma comment(lib, "rive.lib")
+#pragma comment(lib, "rive_sheenbidi.lib")
+#pragma comment(lib, "rive_harfbuzz.lib")
+#pragma comment(lib, "rive_decoders.lib")
+#pragma comment(lib, "libpng.lib")
+#pragma comment(lib, "zlib.lib")
 
+#include "rive/pls/pls_render_context.hpp"
+#include "rive/pls/pls_renderer.hpp"
+#include "rive/pls/d3d/pls_render_context_d3d_impl.hpp"
+#include "rive/pls/d3d/d3d11.hpp"
+#include "NvD3D11SavedState.h"
+
+using namespace rive;
+using namespace rive::pls;
 #endif
 
 static void exit_with_error(const char *message, wasmtime_error_t *error, wasm_trap_t *trap)
@@ -91,6 +114,17 @@ auto split_fixed(char separator, std::string_view input)
 }
 
 #ifdef _WIN32
+
+PalD3D11::PalD3D11(ID3D11Device *device, ID3D11DeviceContext *context) : m_device(device), m_device_context(context)
+{
+#ifdef RLT_RIVE
+	PLSRenderContextD3DImpl::ContextOptions contextOptions{};
+
+	m_plsContext = PLSRenderContextD3DImpl::MakeContext(m_device, m_device_context, contextOptions);
+#endif
+}
+
+PalD3D11::~PalD3D11() {};
 
 ObjectID PalD3D11::CreateBuffer(BufferDescriptor desc, int length, uint8_t data[])
 {
@@ -222,7 +256,12 @@ void PalD3D11::DeleteBuffer(ObjectID buffer_id)
 
 ObjectID PalD3D11::CreateVector(int length, uint8_t data[])
 {
-	return -1;
+	m_vector_commands.emplace_back(VectorLoader::Read(data, length));
+
+	m_vector_srvs.emplace_back(nullptr);
+	m_vector_textures.emplace_back(nullptr);
+
+	return m_vector_commands.size() - 1;
 }
 
 void PalD3D11::DrawTriangleList(ObjectID buffer_id, int offset, int length, unsigned int stride)
@@ -235,8 +274,104 @@ void PalD3D11::DrawTriangleList(ObjectID buffer_id, int offset, int length, unsi
 	m_device_context->Draw(length, offset);
 }
 
-void PalD3D11::DrawVector(ObjectID buffer_id, int offset)
+void PalD3D11::DrawVector(ObjectID buffer_id, int slot, int width, int height)
 {
+#if defined(RLT_RIVE)
+	{
+		D3D11SavedState savedState(m_device_context);
+
+		const auto &vector = m_vector_commands[buffer_id];
+
+		rive::Factory *factory = m_plsContext.get();
+
+		auto renderer = std::make_unique<PLSRenderer>(m_plsContext.get());
+
+		auto plsContextImpl = m_plsContext->static_impl_cast<PLSRenderContextD3DImpl>();
+
+		auto renderTarget = plsContextImpl->makeRenderTarget(width, height);
+
+		if (m_vector_textures[buffer_id] == nullptr)
+		{
+			D3D11_TEXTURE2D_DESC CoordinateTexDesc = {
+				static_cast<UINT>(width), // UINT Width;
+				static_cast<UINT>(height), // UINT Height;
+				1, // UINT MipLevels;
+				1, // UINT ArraySize;
+				DXGI_FORMAT_R8G8B8A8_UNORM, // DXGI_FORMAT Format;
+				{1, 0}, // DXGI_SAMPLE_DESC SampleDesc;
+				D3D11_USAGE_DEFAULT, // D3D11_USAGE Usage;
+				D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET, // UINT BindFlags;
+				0, // UINT CPUAccessFlags;
+				0, // UINT MiscFlags;
+			};
+
+			m_device->CreateTexture2D(&CoordinateTexDesc, NULL, &m_vector_textures[buffer_id]);
+			m_device->CreateShaderResourceView(m_vector_textures[buffer_id], NULL, &m_vector_srvs[buffer_id]);
+		}
+
+		m_plsContext->beginFrame({
+			.renderTargetWidth = static_cast<uint32_t>(width),
+			.renderTargetHeight = static_cast<uint32_t>(height),
+			.clearColor = 0xFF444444,
+			.msaaSampleCount = 0,
+			.disableRasterOrdering = false,
+			.wireframe = false,
+			.fillsDisabled = false,
+			.strokesDisabled = false,
+		});
+
+		renderTarget->setTargetTexture(m_vector_textures[buffer_id]);
+
+		for (const auto &paths : vector)
+		{
+			const auto &raw_paint = std::get<0>(paths);
+			auto paint = factory->makeRenderPaint();
+
+			//paint->blendMode(static_cast<BlendMode>(raw_paint.blendMode));
+			paint->join(static_cast<StrokeJoin>(raw_paint.join));
+			paint->cap(static_cast<StrokeCap>(raw_paint.cap));
+			paint->style(static_cast<RenderPaintStyle>(raw_paint.style));
+			paint->thickness(raw_paint.thickness);
+			paint->color(raw_paint.color);
+
+			RawPath rp{};
+			const auto &raw_path = std::get<1>(paths);
+
+			for (const auto &path : raw_path)
+			{
+				const auto type = std::get<0>(path);
+				const auto &points = std::get<1>(path);
+
+				switch (type)
+				{
+				case VectorLoader::EPathType::Move:
+					rp.moveTo(points[0].x, points[0].y);
+					break;
+				case VectorLoader::EPathType::Line:
+					rp.lineTo(points[0].x, points[0].y);
+					break;
+				case VectorLoader::EPathType::Quad:
+					rp.quadTo(points[0].x, points[0].y, points[1].x, points[1].y);
+					break;
+				case VectorLoader::EPathType::Cubic:
+					rp.cubicTo(points[0].x, points[0].y, points[1].x, points[1].y, points[2].x, points[2].y);
+					break;
+				case VectorLoader::EPathType::Close:
+					rp.close();
+					break;
+				}
+			}
+
+			auto path = factory->makeRenderPath(rp, FillRule::nonZero);
+
+			renderer->drawPath(path.get(), paint.get());
+
+			
+		}
+		m_plsContext->flush({.renderTarget = renderTarget.get()});
+	}
+	m_device_context->PSSetShaderResources(slot, 1, &m_vector_srvs[buffer_id]);
+#endif
 }
 
 #endif
@@ -359,7 +494,7 @@ ObjectID PalOpenGL::CreateVector(int length, uint8_t data[])
 	return -1;
 }
 
-void wander::PalOpenGL::DrawVector(ObjectID buffer_id, int offset)
+void wander::PalOpenGL::DrawVector(ObjectID buffer_id, int slot, int width, int height)
 {
 
 }
@@ -374,6 +509,11 @@ void PalOpenGL::DrawTriangleList(ObjectID buffer_id, int offset, int length, uns
 void RenderTreeNode::RenderFixedStride(IRuntime* runtime, unsigned int stride) const
 {
 	static_cast<Runtime*>(runtime)->PalImpl()->DrawTriangleList(m_buffer_id, m_offset, m_length, stride);
+}
+
+void RenderTreeNode::RenderVector(IRuntime *runtime, int slot, int width, int height) const
+{
+	static_cast<Runtime*>(runtime)->PalImpl()->DrawVector(m_buffer_id, slot, width, height);
 }
 
 std::string RenderTreeNode::Metadata() const
@@ -522,7 +662,7 @@ ObjectID wander::Runtime::BuildVector(uint32_t length, uint8_t* data)
 	nodes.push_back(node);
 
 	m_render_trees.push_back(std::make_unique<RenderTree>(nodes));
-	return -1;
+	return m_render_trees.size() - 1;
 }
 
 ObjectID wander::Runtime::Render(const ObjectID renderlet_id)
@@ -683,7 +823,7 @@ T* construct(Args &&...args)
 }
 
 template <typename... ARGs>
-IPal* Factory::CreatePal(EPalType type, ARGs &&...args)
+IPal* wander::Factory::CreatePal(EPalType type, ARGs &&...args)
 {
 	switch (type)
 	{
@@ -698,7 +838,7 @@ IPal* Factory::CreatePal(EPalType type, ARGs &&...args)
 }
 
 
-IRuntime* Factory::CreateRuntime(IPal *pal)
+IRuntime* wander::Factory::CreateRuntime(IPal *pal)
 {
 	return new Runtime(static_cast<Pal *>(pal));
 }
@@ -710,3 +850,77 @@ template class wander::IPal *__cdecl wander::Factory::CreatePal<void *>(enum wan
 template class wander::IPal *__cdecl wander::Factory::CreatePal<struct ID3D11Device *&, struct ID3D11DeviceContext *&>(
 	enum wander::EPalType, struct ID3D11Device *&, struct ID3D11DeviceContext *&);
 #endif
+
+CByteArrayStreambuf::CByteArrayStreambuf(const uint8_t *begin, const size_t size) :
+	m_begin(begin), m_end(begin + size), m_current(m_begin)
+{
+	assert(std::less_equal<>()(m_begin, m_end));
+}
+
+
+CByteArrayStreambuf::int_type CByteArrayStreambuf::underflow()
+{
+	if (m_current == m_end)
+		return traits_type::eof();
+
+	return traits_type::to_int_type(*m_current);
+}
+
+
+CByteArrayStreambuf::int_type CByteArrayStreambuf::uflow()
+{
+	if (m_current == m_end)
+		return traits_type::eof();
+
+	return traits_type::to_int_type(*m_current++);
+}
+
+
+CByteArrayStreambuf::int_type CByteArrayStreambuf::pbackfail(int_type ch)
+{
+	if (m_current == m_begin || (ch != traits_type::eof() && ch != m_current[-1]))
+		return traits_type::eof();
+
+	return traits_type::to_int_type(*--m_current);
+}
+
+
+std::streamsize CByteArrayStreambuf::showmanyc()
+{
+	assert(std::less_equal<>()(m_current, m_end));
+	return m_end - m_current;
+}
+
+
+std::streampos CByteArrayStreambuf::seekoff(std::streamoff off, std::ios_base::seekdir way,
+											std::ios_base::openmode which)
+{
+	if (way == std::ios_base::beg)
+	{
+		m_current = m_begin + off;
+	}
+	else if (way == std::ios_base::cur)
+	{
+		m_current += off;
+	}
+	else if (way == std::ios_base::end)
+	{
+		m_current = m_end;
+	}
+
+	if (m_current < m_begin || m_current > m_end)
+		return -1;
+
+	return m_current - m_begin;
+}
+
+
+std::streampos CByteArrayStreambuf::seekpos(std::streampos sp, std::ios_base::openmode which)
+{
+	m_current = m_begin + sp;
+
+	if (m_current < m_begin || m_current > m_end)
+		return -1;
+
+	return m_current - m_begin;
+}

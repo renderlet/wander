@@ -110,6 +110,8 @@ public:
 
 	void RenderFixedStride(IRuntime* runtime, unsigned int stride) const;
 
+	void RenderVector(IRuntime *runtime, int slot, int width, int height) const;
+
 	std::string Metadata() const;
 
 	// This should be private

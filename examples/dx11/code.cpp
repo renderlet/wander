@@ -21,31 +21,8 @@
 
 #include "bmpread.h"
 
+#define RLT_RIVE
 #include "wander.h"
-
-#ifdef _DEBUG
-
-#pragma comment(lib, "rive_pls_renderer.lib")
-#pragma comment(lib, "rive.lib")
-#pragma comment(lib, "rive_sheenbidi.lib")
-#pragma comment(lib, "rive_harfbuzz.lib")
-#pragma comment(lib, "rive_decoders.lib")
-#pragma comment(lib, "libpng.lib")
-#pragma comment(lib, "zlib.lib")
-
-#include "rive/pls/pls_render_context.hpp"
-#include "rive/pls/pls_renderer.hpp"
-#include "rive/pls/d3d/pls_render_context_d3d_impl.hpp"
-#include "rive/pls/d3d/d3d11.hpp"
-
-using namespace rive;
-using namespace rive::pls;
-
-static float2 s_pts[] = {{260 + 2 * 100, 60 + 2 * 500}, {260 + 2 * 257, 60 + 2 * 233}, {260 + 2 * -100, 60 + 2 * 300},
-						 {260 + 2 * 100, 60 + 2 * 200}, {260 + 2 * 250, 60 + 2 * 0},   {260 + 2 * 400, 60 + 2 * 200},
-						 {260 + 2 * 213, 60 + 2 * 200}, {260 + 2 * 213, 60 + 2 * 300}, {260 + 2 * 391, 60 + 2 * 480}};
-
-#endif
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -402,40 +379,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	runtime->PushParam(renderlet_id_vector, 768.0f);
 	runtime->PushParam(renderlet_id_vector, 1.0f);
 	auto tree_id_vector = runtime->Render(renderlet_id_vector);
-	//auto tree_vector = runtime->GetRenderTree(tree_id_vector);
+	auto tree_vector = runtime->GetRenderTree(tree_id_vector);
 
-	///////////////////////////////////////////////////////////////////////////////////////////////
-#ifdef _DEBUG
-    pls::PLSRenderContextD3DImpl::ContextOptions contextOptions{};
-
-    std::unique_ptr<pls::PLSRenderContext> plsContext =
-		pls::PLSRenderContextD3DImpl::MakeContext(baseDevice, baseDeviceContext, contextOptions);
-
-    auto plsContextImpl = plsContext->static_impl_cast<PLSRenderContextD3DImpl>();
-
-    D3D11_TEXTURE2D_DESC CoordinateTexDesc = {
-		(UINT)bitmap.width, // UINT Width;
-		(UINT)bitmap.height, // UINT Height;
-		1, // UINT MipLevels;
-		1, // UINT ArraySize;
-		DXGI_FORMAT_R8G8B8A8_UNORM, // DXGI_FORMAT Format;
-		{1, 0}, // DXGI_SAMPLE_DESC SampleDesc;
-		D3D11_USAGE_DEFAULT, // D3D11_USAGE Usage;
-		D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET, // UINT BindFlags;
-		0, // UINT CPUAccessFlags;
-		0, // UINT MiscFlags;
-	};
-
-
-	ID3D11Texture2D*  ptex2DCoordinateTexture;
-	ID3D11ShaderResourceView *ptex2DCoordinateTextureSRV;
-	device->CreateTexture2D(&CoordinateTexDesc, NULL, &ptex2DCoordinateTexture);
-	device->CreateShaderResourceView(ptex2DCoordinateTexture, NULL, &ptex2DCoordinateTextureSRV);
-
-    auto renderTarget = 
-        plsContextImpl->makeRenderTarget(
-            CoordinateTexDesc.Width, CoordinateTexDesc.Height);
-#endif
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
     while (true)
@@ -459,87 +404,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         {
 			break;
         }
-
-        ///////////////////////////////////////////////////////////////////////////////////////////
-
-#ifdef _DEBUG
-		deviceContext->OMSetRenderTargets(1, &frameBufferView, nullptr);
-
-
-		plsContext->beginFrame({
-			.renderTargetWidth = CoordinateTexDesc.Width,
-			.renderTargetHeight = CoordinateTexDesc.Height,
-			.clearColor = 0x00404040,
-			.msaaSampleCount = 0,
-			.disableRasterOrdering = false,
-			.wireframe = false,
-			.fillsDisabled = false,
-			.strokesDisabled = false,
-		});
-
-
-		auto renderer = std::make_unique<PLSRenderer>(plsContext.get());
-
-		static StrokeJoin s_join = StrokeJoin::miter;
-		static StrokeCap s_cap = StrokeCap::butt;
-		static float s_strokeWidth = 70;
-
-		float2 p[9];
-		for (int i = 0; i < 9; ++i)
-		{
-			p[i] = s_pts[i];
-		}
-		RawPath rawPath;
-		rawPath.moveTo(p[0].x, p[0].y);
-		rawPath.cubicTo(p[1].x, p[1].y, p[2].x, p[2].y, p[3].x, p[3].y);
-		float2 c0 = simd::mix(p[3], p[4], float2(2 / 3.f));
-		float2 c1 = simd::mix(p[5], p[4], float2(2 / 3.f));
-		rawPath.cubicTo(c0.x, c0.y, c1.x, c1.y, p[5].x, p[5].y);
-		rawPath.cubicTo(p[6].x, p[6].y, p[7].x, p[7].y, p[8].x, p[8].y);
-		// if (s_doClose)
-		//{
-		//	rawPath.close();
-		// }
-
-		Factory *factory = plsContext.get();
-		auto path = factory->makeRenderPath(rawPath, FillRule::nonZero);
-
-		auto fillPaint = factory->makeRenderPaint();
-		fillPaint->style(RenderPaintStyle::fill);
-		fillPaint->color(-1);
-
-		auto strokePaint = factory->makeRenderPaint();
-		strokePaint->style(RenderPaintStyle::stroke);
-		strokePaint->color(0x8000ffff);
-		strokePaint->thickness(s_strokeWidth);
-		strokePaint->join(s_join);
-		strokePaint->cap(s_cap);
-
-		renderer->drawPath(path.get(), fillPaint.get());
-		renderer->drawPath(path.get(), strokePaint.get());
-
-		// Draw the interactive points.
-		auto pointPaint = factory->makeRenderPaint();
-		pointPaint->style(RenderPaintStyle::stroke);
-		pointPaint->color(0xff0000ff);
-		pointPaint->thickness(14);
-		pointPaint->cap(StrokeCap::round);
-
-		auto pointPath = factory->makeEmptyRenderPath();
-		for (int i : {1, 2, 4, 6, 7})
-		{
-			float2 pt = s_pts[i];
-			pointPath->moveTo(pt.x, pt.y);
-		}
-
-		renderer->drawPath(pointPath.get(), pointPaint.get());
-
-		//swapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), reinterpret_cast<void **>(&frameBuffer));
-		//renderTarget->setTargetTexture(frameBuffer);
-		renderTarget->setTargetTexture(ptex2DCoordinateTexture);
-		plsContext->flush({.renderTarget = renderTarget.get()});
-
-#endif
 
         ///////////////////////////////////////////////////////////////////////////////////////////
 
@@ -623,11 +487,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			auto node = tree->NodeAt(i);
 			if (node->Metadata().find("roof") != std::string::npos)
 			{
-#ifdef _DEBUG
-				deviceContext->PSSetShaderResources(0, 1, &ptex2DCoordinateTextureSRV);
-#else
-				deviceContext->PSSetShaderResources(0, 1, &textureViewRoof);
-#endif
+				//deviceContext->PSSetShaderResources(0, 1, &ptex2DCoordinateTextureSRV);
+				tree_vector->NodeAt(0)->RenderVector(runtime, 0, bitmap.width, bitmap.height);
 			}
 			else if (node->Metadata().find("window") != std::string::npos)
 			{
@@ -642,9 +503,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		}
 
         swapChain->Present(1, 0);
-#ifdef _DEBUG
-        renderTarget->setTargetTexture(nullptr);
-#endif
     }
 
     if (runtime)
