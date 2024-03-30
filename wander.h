@@ -101,15 +101,16 @@ public:
 	virtual EPalType Type() = 0;
 };
 
-
 class RenderTreeNode
 {
 public:
-	RenderTreeNode(ObjectID buffer_id, const std::string& metadata, int offset, int length) :
-		m_buffer_id(buffer_id), m_metadata(metadata),
+	RenderTreeNode(ObjectID buffer_id, const BufferType& buffer_type, const std::string& metadata, int offset, int length) :
+		m_buffer_id(buffer_id), m_buffer_type(buffer_type), m_metadata(metadata),
 		m_offset(offset), m_length(length) { }
 
 	void RenderFixedStride(IRuntime* runtime, unsigned int stride) const;
+
+	void RenderVector(IRuntime *runtime, int slot, int width, int height) const;
 
 	std::string Metadata() const;
 
@@ -121,6 +122,7 @@ public:
 
 private:
 	ObjectID m_buffer_id;
+	BufferType m_buffer_type;
 	std::string m_metadata;
 	int m_offset;
 	int m_length;
@@ -168,7 +170,7 @@ public:
 	virtual void PushParam(ObjectID renderlet_id, uint64_t value) = 0;
 	virtual void ResetStack(ObjectID renderlet_id) = 0;
 
-	virtual ObjectID Render(ObjectID renderlet_id) = 0;
+	virtual ObjectID Render(ObjectID renderlet_id, ObjectID tree_id = -1) = 0;
 
 	virtual const RenderTree* GetRenderTree(ObjectID tree_id) = 0;
 	virtual void DestroyRenderTree(ObjectID tree_id) = 0;

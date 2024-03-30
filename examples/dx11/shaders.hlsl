@@ -32,7 +32,8 @@ vs_out vs_main(vs_in input)
 
     output.position = mul(float4(input.position, 1.0f), mul(transform, projection));
     output.texcoord = input.texcoord;
-    output.color    = float4(input.color * light, 1.0f);
+    //output.color    = float4(input.color * light, 1.0f);
+    output.color    = float4(input.color, 1.0f);
 
     return output;
 }

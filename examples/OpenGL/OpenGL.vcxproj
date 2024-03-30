@@ -209,6 +209,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\wander.cpp" />
+    <ClCompile Include="bmpread.c" />
     <ClCompile Include="demo.cpp" />
   </ItemGroup>
   <ItemGroup>

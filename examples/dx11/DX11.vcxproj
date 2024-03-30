@@ -98,30 +98,30 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">
-    <IncludePath>$(SolutionDir)..\;$(SolutionDir)..\wasmtime\include;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)..\;$(SolutionDir)..\wasmtime\include;$(SolutionDir)..\libs\rive-renderer\submodules\rive-cpp\include;$(SolutionDir)..\libs\rive-renderer\include;$(IncludePath)</IncludePath>
     <SourcePath>$(SolutionDir)..\;$(SourcePath)</SourcePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">
-    <IncludePath>$(SolutionDir)..\;$(SolutionDir)..\wasmtime\include;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)..\;$(SolutionDir)..\wasmtime\include;$(SolutionDir)..\libs\rive-renderer\submodules\rive-cpp\include;$(SolutionDir)..\libs\rive-renderer\include;$(IncludePath)</IncludePath>
     <SourcePath>$(SolutionDir)..\;$(SourcePath)</SourcePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <IncludePath>$(SolutionDir)..\;$(SolutionDir)..\wasmtime\include;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)..\;$(SolutionDir)..\wasmtime\include;$(SolutionDir)..\libs\rive-renderer\submodules\rive-cpp\include;$(SolutionDir)..\libs\rive-renderer\include;$(IncludePath)</IncludePath>
     <SourcePath>$(SolutionDir)..\;$(SourcePath)</SourcePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <IncludePath>$(SolutionDir)..\;$(SolutionDir)..\wasmtime\include;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)..\;$(SolutionDir)..\wasmtime\include;$(SolutionDir)..\libs\rive-renderer\submodules\rive-cpp\include;$(SolutionDir)..\libs\rive-renderer\include;$(IncludePath)</IncludePath>
     <SourcePath>$(SolutionDir)..\;$(SourcePath)</SourcePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>$(SolutionDir)..\;$(SolutionDir)..\wasmtime\include;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)..\;$(SolutionDir)..\wasmtime\include;$(SolutionDir)..\libs\rive-renderer\submodules\rive-cpp\include;$(SolutionDir)..\libs\rive-renderer\include;$(IncludePath)</IncludePath>
     <SourcePath>$(SolutionDir)..\;$(SourcePath)</SourcePath>
-    <LibraryPath>$(SolutionDir)..\wasmtime\lib;$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(SolutionDir)..\wasmtime\lib;$(SolutionDir)..\libs\rive-renderer\out\$(Configuration);$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IncludePath>$(SolutionDir)..\;$(SolutionDir)..\wasmtime\include;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)..\;$(SolutionDir)..\wasmtime\include;$(SolutionDir)..\libs\rive-renderer\submodules\rive-cpp\include;$(SolutionDir)..\libs\rive-renderer\include;$(IncludePath)</IncludePath>
     <SourcePath>$(SolutionDir)..\;$(SourcePath)</SourcePath>
-    <LibraryPath>$(SolutionDir)..\wasmtime\lib;$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(SolutionDir)..\wasmtime\lib;$(SolutionDir)..\libs\rive-renderer\out\$(Configuration);$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -159,7 +159,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <LanguageStandard>stdcpp17</LanguageStandard>
+      <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -174,7 +174,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <LanguageStandard>stdcpp17</LanguageStandard>
+      <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -235,6 +235,11 @@
   </ItemGroup>
   <ItemGroup>
     <CopyFileToFolders Include="..\Building.wasm">
+      <FileType>Document</FileType>
+    </CopyFileToFolders>
+  </ItemGroup>
+  <ItemGroup>
+    <CopyFileToFolders Include="..\Vector.rlt">
       <FileType>Document</FileType>
     </CopyFileToFolders>
   </ItemGroup>

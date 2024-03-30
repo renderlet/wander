@@ -1,12 +1,11 @@
+#define _SILENCE_ALL_CXX20_DEPRECATION_WARNINGS
 
 #pragma comment(lib, "user32")
 #pragma comment(lib, "urlmon.lib")
 #pragma comment(lib, "d3d11")
 #pragma comment(lib, "d3dcompiler")
 
-#ifdef _WIN64
 #pragma comment(lib, "wasmtime.dll.lib")
-#endif
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -16,17 +15,20 @@
 #include <d3d11_1.h>
 #include <d3dcompiler.h>
 
+#include <chrono>
 #include <fstream>
 #include <math.h> // sin, cos
 #include "xube.h" // 3d model
 
 #include "bmpread.h"
 
+#define RLT_RIVE
 #include "wander.h"
+
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-#define TITLE "Minimal D3D11 by d7samurai"
+#define TITLE "renderlet - adapted from Minimal D3D11 by d7samurai"
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -39,6 +41,8 @@ matrix operator*(const matrix& m1, const matrix& m2);
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
 {
+	auto then = std::chrono::system_clock::now();
+
     WNDCLASSA wndClass = { 0, DefWindowProcA, 0, 0, 0, 0, 0, 0, 0, TITLE };
 
     RegisterClassA(&wndClass);
@@ -47,7 +51,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
-    D3D_FEATURE_LEVEL featureLevels[] = { D3D_FEATURE_LEVEL_11_0 };
+    D3D_FEATURE_LEVEL featureLevels[] = { D3D_FEATURE_LEVEL_11_1 };
     
     ID3D11Device* baseDevice;
     ID3D11DeviceContext* baseDeviceContext;
@@ -83,7 +87,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     DXGI_SWAP_CHAIN_DESC1 swapChainDesc;
     swapChainDesc.Width              = 0; // use window width
     swapChainDesc.Height             = 0; // use window height
-    swapChainDesc.Format             = DXGI_FORMAT_B8G8R8A8_UNORM_SRGB;
+    //swapChainDesc.Format             = DXGI_FORMAT_B8G8R8A8_UNORM_SRGB;
+	swapChainDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
     swapChainDesc.Stereo             = FALSE;
     swapChainDesc.SampleDesc.Count   = 1;
     swapChainDesc.SampleDesc.Quality = 0;
@@ -244,7 +249,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     textureDesc.Height             = TEXTURE_HEIGHT; // in xube.h
     textureDesc.MipLevels          = 1;
     textureDesc.ArraySize          = 1;
-    textureDesc.Format             = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
+    textureDesc.Format             = DXGI_FORMAT_R8G8B8A8_UNORM;
     textureDesc.SampleDesc.Count   = 1;
     textureDesc.Usage              = D3D11_USAGE_IMMUTABLE;
     textureDesc.BindFlags          = D3D11_BIND_SHADER_RESOURCE;
@@ -267,7 +272,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	textureDesc.Height = 1;
 	textureDesc.MipLevels = 1;
 	textureDesc.ArraySize = 1;
-	textureDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
+	textureDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
 	textureDesc.SampleDesc.Count = 1;
 	textureDesc.Usage = D3D11_USAGE_IMMUTABLE;
 	textureDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
@@ -286,15 +291,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
     bmpread_t bitmap;
-    /*
-    std::ifstream file("roof2.bmp", std::ios::binary | std::ios::ate);
-	std::streamsize size = file.tellg();
-	file.seekg(0, std::ios::beg);
-
-	std::vector<char> buffer(size);
-	file.read(&buffer[0], size);
-    */
-	//bmpread(buffer.data(), BMPREAD_TOP_DOWN | BMPREAD_ANY_SIZE, &bitmap);
 	bmpread("roof2.bmp", BMPREAD_TOP_DOWN | BMPREAD_ANY_SIZE  | BMPREAD_ALPHA, &bitmap);
 
 	textureDesc.Width = bitmap.width;
@@ -377,12 +373,14 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	URLDownloadToFile(NULL, dwnld_URL.c_str(), savepath.c_str(), 0, NULL);
 
     auto renderlet_id = runtime->LoadFromFile(L"demo.rlt", "start");
-	//auto renderlet_id = runtime->LoadFromFile(L"Building.rlt", "start");
 
 	auto tree_id = runtime->Render(renderlet_id);
 	auto tree = runtime->GetRenderTree(tree_id);
 
-	///////////////////////////////////////////////////////////////////////////////////////////////
+    auto renderlet_id_vector = runtime->LoadFromFile(L"Vector.rlt", "vector");
+	wander::ObjectID tree_id_vector = -1;
+
+    ///////////////////////////////////////////////////////////////////////////////////////////////
 
     while (true)
     {
@@ -434,6 +432,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
         ///////////////////////////////////////////////////////////////////////////////////////////
 
+
         deviceContext->ClearRenderTargetView(frameBufferView, backgroundColor);
         deviceContext->ClearDepthStencilView(depthBufferView, D3D11_CLEAR_DEPTH, 1.0f, 0);
 
@@ -469,23 +468,32 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
         constants = reinterpret_cast<Constants*>(mappedSubresource.pData);
 
-        constants->Transform   = rotateX * rotateY * rotateZ * scale * translate;
+		auto mx = 1.57;
+        matrix rotateX2   = { 1, 0, 0, 0, 0, static_cast<float>(cos(mx)), -static_cast<float>(sin(mx)), 0, 0, static_cast<float>(sin(mx)), static_cast<float>(cos(mx)), 0, 0, 0, 0, 1 };
+#ifdef _DEBUG
+    	constants->Transform = rotateZ * rotateX2 * scale * translate;
+#else
+		constants->Transform = rotateX * rotateY * rotateZ * scale * translate;
+#endif
         constants->Projection  = { 2 * n / w, 0, 0, 0, 0, 2 * n / h, 0, 0, 0, 0, f / (f - n), 1, 0, 0, n * f / (n - f), 0 };
         constants->LightVector = { 1.0f, -1.0f, 1.0f };
 
         deviceContext->Unmap(constantBuffer, 0);
-
-        //ID3D11ShaderResourceView *nullSRV[1] = {nullptr};
-		//deviceContext->PSSetShaderResources(0, 1, nullSRV);
-
-        
+        auto now = std::chrono::system_clock::now();
+		auto f_secs = std::chrono::duration_cast<std::chrono::duration<float>>(now - then);
+		runtime->PushParam(renderlet_id_vector, static_cast<float>(bitmap.width));
+		runtime->PushParam(renderlet_id_vector, static_cast<float>(bitmap.height));
+		runtime->PushParam(renderlet_id_vector, f_secs.count());
+		tree_id_vector = runtime->Render(renderlet_id_vector, tree_id_vector);
+		auto tree_vector = runtime->GetRenderTree(tree_id_vector);
 
 		for (auto i = 0; i < tree->Length(); ++i)
 		{
 			auto node = tree->NodeAt(i);
 			if (node->Metadata().find("roof") != std::string::npos)
 			{
-				deviceContext->PSSetShaderResources(0, 1, &textureViewRoof);
+				//deviceContext->PSSetShaderResources(0, 1, &ptex2DCoordinateTextureSRV);
+				tree_vector->NodeAt(0)->RenderVector(runtime, 0, bitmap.width, bitmap.height);
 			}
 			else if (node->Metadata().find("window") != std::string::npos)
 			{
@@ -496,10 +504,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 				deviceContext->PSSetShaderResources(0, 1, &textureViewWhite);
 			}
 				
-             node->RenderFixedStride(runtime, stride);
+			node->RenderFixedStride(runtime, stride);
 		}
-
-        ///////////////////////////////////////////////////////////////////////////////////////////
+		//runtime->DestroyRenderTree(tree_id_vector);
 
         swapChain->Present(1, 0);
     }
