@@ -309,6 +309,7 @@ public:  // TODO: Replace with std::span
 	virtual void DeleteBuffer(ObjectID buffer_id) = 0;
 
 	virtual ObjectID CreateVector(int length, uint8_t data[]) = 0;
+	virtual ObjectID UpdateVector(int length, uint8_t data[], ObjectID buffer_id) = 0;
 
 	virtual void DrawTriangleList(ObjectID buffer_id, int offset, int length, unsigned int stride) = 0;
 
@@ -337,10 +338,12 @@ public:
 	void DeleteBuffer(ObjectID buffer_id) override;
 
 	ObjectID CreateVector(int length, uint8_t data[]) override;
+	ObjectID UpdateVector(int length, uint8_t data[], ObjectID buffer_id) override;
 
 	void DrawTriangleList(ObjectID buffer_id, int offset, int length, unsigned int stride) override;
 
 	void DrawVector(ObjectID buffer_id, int slot, int width, int height) override;
+	
 
 private:
 	std::vector<ID3D11Buffer*> m_buffers;
@@ -376,6 +379,7 @@ public:
 	void DeleteBuffer(ObjectID buffer_id) override;
 
 	ObjectID CreateVector(int length, uint8_t data[]) override;
+	ObjectID UpdateVector(int length, uint8_t data[], ObjectID buffer_id) override;
 
 	void DrawTriangleList(ObjectID buffer_id, int offset, int length, unsigned int stride) override;
 
@@ -426,7 +430,7 @@ public:
 	void PushParam(ObjectID renderlet_id, uint64_t value) override;
 	void ResetStack(ObjectID renderlet_id) override;
 
-	ObjectID Render(ObjectID renderlet_id) override;
+	ObjectID Render(ObjectID renderlet_id, ObjectID tree_id = -1) override;
 
 	const RenderTree *GetRenderTree(ObjectID tree_id) override;
 	void DestroyRenderTree(ObjectID tree_id) override;
@@ -440,7 +444,7 @@ public:
 
 private:
 
-	ObjectID BuildVector(uint32_t length, uint8_t *data);
+	ObjectID BuildVector(uint32_t length, uint8_t *data, ObjectID tree_id);
 
 	struct WasmtimeContext
 	{

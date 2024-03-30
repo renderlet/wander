@@ -264,6 +264,13 @@ ObjectID PalD3D11::CreateVector(int length, uint8_t data[])
 	return m_vector_commands.size() - 1;
 }
 
+ObjectID PalD3D11::UpdateVector(int length, uint8_t data[], ObjectID buffer_id)
+{
+	m_vector_commands[buffer_id] = VectorLoader::Read(data, length);
+
+	return buffer_id;
+}
+
 void PalD3D11::DrawTriangleList(ObjectID buffer_id, int offset, int length, unsigned int stride)
 {
 	const UINT strides = stride;
@@ -494,6 +501,11 @@ ObjectID PalOpenGL::CreateVector(int length, uint8_t data[])
 	return -1;
 }
 
+ObjectID PalOpenGL::UpdateVector(int length, uint8_t data[], ObjectID buffer_id)
+{
+	return -1;
+}
+
 void wander::PalOpenGL::DrawVector(ObjectID buffer_id, int slot, int width, int height)
 {
 
@@ -651,8 +663,17 @@ void wander::Runtime::ResetStack(ObjectID renderlet_id)
 	m_params[renderlet_id] = {};
 }
 
-ObjectID wander::Runtime::BuildVector(uint32_t length, uint8_t* data)
+ObjectID wander::Runtime::BuildVector(uint32_t length, uint8_t *data, ObjectID tree_id)
 {
+	if (tree_id != -1)
+	{
+		auto buffer_id = m_render_trees[tree_id]->NodeAt(0)->BufferID();
+
+		m_pal->UpdateVector(length, data, buffer_id);
+
+		return tree_id;
+	}
+
 	std::vector<RenderTreeNode> nodes;
 
 	auto id = m_pal->CreateVector(length, data);
@@ -665,7 +686,7 @@ ObjectID wander::Runtime::BuildVector(uint32_t length, uint8_t* data)
 	return m_render_trees.size() - 1;
 }
 
-ObjectID wander::Runtime::Render(const ObjectID renderlet_id)
+ObjectID wander::Runtime::Render(const ObjectID renderlet_id, ObjectID tree_id)
 {
 	std::vector<wasmtime_val_t> args(m_params[renderlet_id].size());
 
@@ -731,7 +752,7 @@ ObjectID wander::Runtime::Render(const ObjectID renderlet_id)
 
 	if (vert_format == 2)
 	{
-		return BuildVector(vert_length, verts);
+		return BuildVector(vert_length, verts, tree_id);
 	}
 
 	auto id = m_pal->CreateBuffer(desc, vert_length, verts);
@@ -757,6 +778,8 @@ ObjectID wander::Runtime::Render(const ObjectID renderlet_id)
 		nodes.push_back(node);
 	}
 
+
+	
 	m_render_trees.push_back(std::make_unique<RenderTree>(nodes));
 
 	return m_render_trees.size() - 1;

@@ -170,7 +170,7 @@ public:
 	virtual void PushParam(ObjectID renderlet_id, uint64_t value) = 0;
 	virtual void ResetStack(ObjectID renderlet_id) = 0;
 
-	virtual ObjectID Render(ObjectID renderlet_id) = 0;
+	virtual ObjectID Render(ObjectID renderlet_id, ObjectID tree_id = -1) = 0;
 
 	virtual const RenderTree* GetRenderTree(ObjectID tree_id) = 0;
 	virtual void DestroyRenderTree(ObjectID tree_id) = 0;

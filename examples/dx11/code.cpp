@@ -15,6 +15,7 @@
 #include <d3d11_1.h>
 #include <d3dcompiler.h>
 
+#include <chrono>
 #include <fstream>
 #include <math.h> // sin, cos
 #include "xube.h" // 3d model
@@ -40,6 +41,8 @@ matrix operator*(const matrix& m1, const matrix& m2);
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
 {
+	auto then = std::chrono::system_clock::now();
+
     WNDCLASSA wndClass = { 0, DefWindowProcA, 0, 0, 0, 0, 0, 0, 0, TITLE };
 
     RegisterClassA(&wndClass);
@@ -375,11 +378,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	auto tree = runtime->GetRenderTree(tree_id);
 
     auto renderlet_id_vector = runtime->LoadFromFile(L"Vector.rlt", "vector");
-	runtime->PushParam(renderlet_id_vector, 1024.0f);
-	runtime->PushParam(renderlet_id_vector, 768.0f);
-	runtime->PushParam(renderlet_id_vector, 1.0f);
-	auto tree_id_vector = runtime->Render(renderlet_id_vector);
-	auto tree_vector = runtime->GetRenderTree(tree_id_vector);
+	wander::ObjectID tree_id_vector = -1;
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -480,7 +479,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         constants->LightVector = { 1.0f, -1.0f, 1.0f };
 
         deviceContext->Unmap(constantBuffer, 0);
-
+        auto now = std::chrono::system_clock::now();
+		auto f_secs = std::chrono::duration_cast<std::chrono::duration<float>>(now - then);
+		runtime->PushParam(renderlet_id_vector, static_cast<float>(bitmap.width));
+		runtime->PushParam(renderlet_id_vector, static_cast<float>(bitmap.height));
+		runtime->PushParam(renderlet_id_vector, f_secs.count());
+		tree_id_vector = runtime->Render(renderlet_id_vector, tree_id_vector);
+		auto tree_vector = runtime->GetRenderTree(tree_id_vector);
 
 		for (auto i = 0; i < tree->Length(); ++i)
 		{
@@ -499,8 +504,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 				deviceContext->PSSetShaderResources(0, 1, &textureViewWhite);
 			}
 				
-             node->RenderFixedStride(runtime, stride);
+			node->RenderFixedStride(runtime, stride);
 		}
+		//runtime->DestroyRenderTree(tree_id_vector);
 
         swapChain->Present(1, 0);
     }
