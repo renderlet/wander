@@ -26,7 +26,8 @@ link :=  $(libglfw) $(libwasmtime)
 
 # extras for non-linux platform build
 optionsextra := -stdlib=libc++
-includesextra := -I -Iglm -Iglfw/include
+includesextra := -I -Iglm -Iglfw/include -I../../libs/rive-renderer/include \
+                 -I../../libs/rive-renderer/submodules/rive-cpp/include
 linkextra := -framework Foundation -framework Cocoa -framework OpenGL -framework IOKit -framework CoreVideo
 
 sources = demo.cpp ../../wander.cpp bmpread.c
