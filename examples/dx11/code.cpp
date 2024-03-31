@@ -16,13 +16,11 @@
 #include <d3dcompiler.h>
 
 #include <chrono>
-#include <fstream>
 #include <math.h> // sin, cos
 #include "xube.h" // 3d model
 
 #include "bmpread.h"
 
-#define RLT_RIVE
 #include "wander.h"
 
 
@@ -372,7 +370,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	std::wstring savepath = L"demo.rlt";
 	URLDownloadToFile(NULL, dwnld_URL.c_str(), savepath.c_str(), 0, NULL);
 
+#ifdef RLT_RIVE
+    auto renderlet_id = runtime->LoadFromFile(L"Building.rlt", "start");
+#else
     auto renderlet_id = runtime->LoadFromFile(L"demo.rlt", "start");
+#endif
 
 	auto tree_id = runtime->Render(renderlet_id);
 	auto tree = runtime->GetRenderTree(tree_id);
@@ -470,7 +472,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 		auto mx = 1.57;
         matrix rotateX2   = { 1, 0, 0, 0, 0, static_cast<float>(cos(mx)), -static_cast<float>(sin(mx)), 0, 0, static_cast<float>(sin(mx)), static_cast<float>(cos(mx)), 0, 0, 0, 0, 1 };
-#ifdef _DEBUG
+#ifdef RLT_RIVE
     	constants->Transform = rotateZ * rotateX2 * scale * translate;
 #else
 		constants->Transform = rotateX * rotateY * rotateZ * scale * translate;
@@ -479,6 +481,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         constants->LightVector = { 1.0f, -1.0f, 1.0f };
 
         deviceContext->Unmap(constantBuffer, 0);
+
         auto now = std::chrono::system_clock::now();
 		auto f_secs = std::chrono::duration_cast<std::chrono::duration<float>>(now - then);
 		runtime->PushParam(renderlet_id_vector, static_cast<float>(bitmap.width));
@@ -492,8 +495,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			auto node = tree->NodeAt(i);
 			if (node->Metadata().find("roof") != std::string::npos)
 			{
-				//deviceContext->PSSetShaderResources(0, 1, &ptex2DCoordinateTextureSRV);
+#ifdef RLT_RIVE
 				tree_vector->NodeAt(0)->RenderVector(runtime, 0, bitmap.width, bitmap.height);
+#else
+				deviceContext->PSSetShaderResources(0, 1, &textureViewRoof);
+#endif
 			}
 			else if (node->Metadata().find("window") != std::string::npos)
 			{

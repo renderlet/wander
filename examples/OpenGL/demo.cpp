@@ -406,7 +406,7 @@ int main(int argc, char **argv)
 	const auto pal = wander::Factory::CreatePal(wander::EPalType::OpenGL, (void*)context.window);
 	context.runtime = wander::Factory::CreateRuntime(pal);
 
-	auto renderlet_id = context.runtime->LoadFromFile(L"../Building.wasm", "start");
+	auto renderlet_id = context.runtime->LoadFromFile(L"../Building.rlt", "start");
 
 	auto tree_id = context.runtime->Render(renderlet_id);
 	context.tree = context.runtime->GetRenderTree(tree_id);

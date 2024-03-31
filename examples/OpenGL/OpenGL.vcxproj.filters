@@ -35,5 +35,11 @@
   </ItemGroup>
   <ItemGroup>
     <CopyFileToFolders Include="..\..\wasmtime\lib\wasmtime.dll" />
+    <CopyFileToFolders Include="window.bmp">
+      <Filter>Resource Files</Filter>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="roof2.bmp">
+      <Filter>Resource Files</Filter>
+    </CopyFileToFolders>
   </ItemGroup>
 </Project>

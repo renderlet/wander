@@ -98,23 +98,23 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">
-    <IncludePath>$(ProjectDir)glfw\include;$(ProjectDir)glew\include;$(ProjectDir)gl3w;$(SolutionDir)..\;$(SolutionDir)..\wasmtime\include;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)glfw\include;$(ProjectDir)glew\include;$(SolutionDir);$(SolutionDir)..\;$(SolutionDir)..\wasmtime\include;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">
-    <IncludePath>$(ProjectDir)glfw\include;$(ProjectDir)glew\include;$(ProjectDir)gl3w;$(SolutionDir)..\;$(SolutionDir)..\wasmtime\include;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)glfw\include;$(ProjectDir)glew\include;$(SolutionDir);$(SolutionDir)..\;$(SolutionDir)..\wasmtime\include;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <IncludePath>$(ProjectDir)glfw\include;$(ProjectDir)glew\include;$(ProjectDir)gl3w;$(SolutionDir)..\;$(SolutionDir)..\wasmtime\include;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)glfw\include;$(ProjectDir)glew\include;$(SolutionDir);$(SolutionDir)..\;$(SolutionDir)..\wasmtime\include;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <IncludePath>$(ProjectDir)glfw\include;$(ProjectDir)glew\include;$(ProjectDir)gl3w;$(SolutionDir)..\;$(SolutionDir)..\wasmtime\include;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)glfw\include;$(ProjectDir)glew\include;$(SolutionDir);$(SolutionDir)..\;$(SolutionDir)..\wasmtime\include;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>$(ProjectDir)glfw\include;$(ProjectDir)glew\include;$(ProjectDir)gl3w;$(SolutionDir)..\;$(SolutionDir)..\wasmtime\include;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)glfw\include;$(ProjectDir)glew\include;$(SolutionDir);$(SolutionDir)..\;$(SolutionDir)..\wasmtime\include;$(IncludePath)</IncludePath>
     <LibraryPath>$(SolutionDir)..\wasmtime\lib;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IncludePath>$(ProjectDir)glfw\include;$(ProjectDir)glew\include;$(ProjectDir)gl3w;$(SolutionDir)..\;$(SolutionDir)..\wasmtime\include;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)glfw\include;$(ProjectDir)glew\include;$(SolutionDir);$(SolutionDir)..\;$(SolutionDir)..\wasmtime\include;$(IncludePath)</IncludePath>
     <LibraryPath>$(SolutionDir)..\wasmtime\lib;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -220,6 +220,10 @@
     <CopyFileToFolders Include="..\..\wasmtime\lib\wasmtime.dll">
       <FileType>Document</FileType>
     </CopyFileToFolders>
+  </ItemGroup>
+  <ItemGroup>
+    <CopyFileToFolders Include="roof2.bmp" />
+    <CopyFileToFolders Include="window.bmp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

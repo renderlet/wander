@@ -13,7 +13,7 @@
   <ItemGroup>
     <CopyFileToFolders Include="shaders.hlsl" />
     <CopyFileToFolders Include="..\..\wasmtime\lib\wasmtime.dll" />
-    <CopyFileToFolders Include="..\Building.wasm" />
+    <CopyFileToFolders Include="..\Building.rlt" />
     <CopyFileToFolders Include="..\Vector.rlt" />
   </ItemGroup>
 </Project>
