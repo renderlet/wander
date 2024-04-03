@@ -19,6 +19,7 @@
 
 #ifdef _WIN32
 #include <d3d11.h>
+#include <d3d11_1.h>
 #pragma comment(lib, "OpenGL32.lib")
 #endif
 
@@ -332,7 +333,13 @@ auto split_fixed(char separator, std::string_view input)
 
 #ifdef _WIN32
 
-PalD3D11::PalD3D11(ID3D11Device *device, ID3D11DeviceContext *context) : m_device(device), m_device_context(context)
+PalD3D11::PalD3D11(ID3D11Device *device, ID3D11DeviceContext *context) :
+	m_device(device), m_device_context(context), m_swapchain(nullptr)
+{
+}
+
+PalD3D11::PalD3D11(ID3D11Device* device, ID3D11DeviceContext* context, IDXGISwapChain1* swapchain) :
+	m_device(device), m_device_context(context), m_swapchain(swapchain)
 {
 #ifdef RLT_RIVE
 	PLSRenderContextD3DImpl::ContextOptions contextOptions{};
@@ -521,7 +528,7 @@ void PalD3D11::DrawVector(ObjectID buffer_id, int slot, int width, int height)
 
 		auto renderTarget = plsContextImpl->makeRenderTarget(width, height);
 
-		if (m_vector_textures[buffer_id] == nullptr)
+		if (slot != -1 && m_vector_textures[buffer_id] == nullptr)
 		{
 			D3D11_TEXTURE2D_DESC CoordinateTexDesc = {
 				static_cast<UINT>(width), // UINT Width;
@@ -543,7 +550,7 @@ void PalD3D11::DrawVector(ObjectID buffer_id, int slot, int width, int height)
 		m_plsContext->beginFrame({
 			.renderTargetWidth = static_cast<uint32_t>(width),
 			.renderTargetHeight = static_cast<uint32_t>(height),
-			.clearColor = 0xFF444444,
+			.clearColor = 0xFF000000,
 			.msaaSampleCount = 0,
 			.disableRasterOrdering = false,
 			.wireframe = false,
@@ -551,7 +558,18 @@ void PalD3D11::DrawVector(ObjectID buffer_id, int slot, int width, int height)
 			.strokesDisabled = false,
 		});
 
-		renderTarget->setTargetTexture(m_vector_textures[buffer_id]);
+		if (slot == -1)
+		{
+			ID3D11Texture2D *frameBuffer;
+
+			m_swapchain->GetBuffer(0, __uuidof(ID3D11Texture2D), reinterpret_cast<void **>(&frameBuffer));
+
+			renderTarget->setTargetTexture(frameBuffer);
+		}
+		else
+		{
+			renderTarget->setTargetTexture(m_vector_textures[buffer_id]);
+		}
 
 		for (const auto &paths : vector)
 		{
@@ -601,7 +619,8 @@ void PalD3D11::DrawVector(ObjectID buffer_id, int slot, int width, int height)
 		}
 		m_plsContext->flush({.renderTarget = renderTarget.get()});
 	}
-	m_device_context->PSSetShaderResources(slot, 1, &m_vector_srvs[buffer_id]);
+	if (slot != -1)
+		m_device_context->PSSetShaderResources(slot, 1, &m_vector_srvs[buffer_id]);
 #endif
 }
 
@@ -1019,7 +1038,9 @@ void wander::Runtime::DestroyRenderTree(ObjectID tree_id)
 	for (auto i = 0; i < m_render_trees[tree_id]->Length(); ++i)
 	{
 		const auto node = m_render_trees[tree_id]->NodeAt(i);
-		m_pal->DeleteBuffer(node->BufferID());
+		if (node->Type() == BufferType::Vertex)
+			m_pal->DeleteBuffer(node->BufferID());
+		// TODO - other resource types
 	}
 
 	m_render_trees[tree_id]->Clear();
@@ -1094,8 +1115,12 @@ IRuntime* wander::Factory::CreateRuntime(IPal *pal)
 template class wander::IPal *__cdecl wander::Factory::CreatePal<void *>(enum wander::EPalType, void *&&);
 
 #ifdef _WIN32
-template class wander::IPal *__cdecl wander::Factory::CreatePal<struct ID3D11Device *&, struct ID3D11DeviceContext *&>(
-	enum wander::EPalType, struct ID3D11Device *&, struct ID3D11DeviceContext *&);
+
+template class wander::IPal *__cdecl wander::Factory::CreatePal<struct ID3D11Device *&, struct ID3D11DeviceContext *&>
+	(enum wander::EPalType, struct ID3D11Device *&, struct ID3D11DeviceContext *&);
+
+template class wander::IPal *__cdecl wander::Factory::CreatePal<struct ID3D11Device *&, struct ID3D11DeviceContext *&,
+	struct IDXGISwapChain1 *&>(enum wander::EPalType, struct ID3D11Device *&, struct ID3D11DeviceContext *&, struct IDXGISwapChain1 *&);
 #endif
 
 CByteArrayStreambuf::CByteArrayStreambuf(const uint8_t *begin, const size_t size) :

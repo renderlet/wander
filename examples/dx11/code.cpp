@@ -363,17 +363,17 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
     const auto pal = wander::Factory::CreatePal(
-        wander::EPalType::D3D11, baseDevice, baseDeviceContext);
+        wander::EPalType::D3D11, baseDevice, baseDeviceContext, swapChain);
 	auto runtime = wander::Factory::CreateRuntime(pal);
 
     std::wstring dwnld_URL = L"https://rltdemoapi2.azurewebsites.net/compiler/output";
 	std::wstring savepath = L"demo.rlt";
 	URLDownloadToFile(NULL, dwnld_URL.c_str(), savepath.c_str(), 0, NULL);
 
-#ifdef RLT_RIVE
-    auto renderlet_id = runtime->LoadFromFile(L"Building.rlt", "start");
+#ifdef _DEBUG
+	auto renderlet_id = runtime->LoadFromFile(L"demo.rlt", "start");
 #else
-    auto renderlet_id = runtime->LoadFromFile(L"demo.rlt", "start");
+	auto renderlet_id = runtime->LoadFromFile(L"Building.rlt", "start");
 #endif
 
 	auto tree_id = runtime->Render(renderlet_id);
@@ -381,6 +381,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
     auto renderlet_id_vector = runtime->LoadFromFile(L"Vector.rlt", "vector");
 	wander::ObjectID tree_id_vector = -1;
+
+	auto renderlet_id_grid = runtime->LoadFromFile(L"Vector.rlt", "grid");
+	wander::ObjectID tree_id_grid = -1;
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -405,6 +408,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         {
 			break;
         }
+
+        auto now = std::chrono::system_clock::now();
+		auto f_secs = std::chrono::duration_cast<std::chrono::duration<float>>(now - then);
 
         ///////////////////////////////////////////////////////////////////////////////////////////
 
@@ -432,11 +438,23 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
         deviceContext->Unmap(constantBuffer, 0);
 
-        ///////////////////////////////////////////////////////////////////////////////////////////
-
-
         deviceContext->ClearRenderTargetView(frameBufferView, backgroundColor);
         deviceContext->ClearDepthStencilView(depthBufferView, D3D11_CLEAR_DEPTH, 1.0f, 0);
+
+        ///////////////////////////////////////////////////////////////////////////////////////////
+
+#ifndef _DEBUG
+
+        runtime->PushParam(renderlet_id_grid, static_cast<float>(depthBufferDesc.Width));
+		runtime->PushParam(renderlet_id_grid, static_cast<float>(depthBufferDesc.Height));
+		runtime->PushParam(renderlet_id_grid, f_secs.count());
+		runtime->PushParam(renderlet_id_grid, 12u);
+		tree_id_grid = runtime->Render(renderlet_id_grid, tree_id_grid);
+		auto tree_grid = runtime->GetRenderTree(tree_id_grid);
+
+        tree_grid->NodeAt(0)->RenderVector(runtime, -1, depthBufferDesc.Width, depthBufferDesc.Height);
+#endif
+        ///////////////////////////////////////////////////////////////////////////////////////////
 
         deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
         deviceContext->IASetInputLayout(inputLayout);
@@ -482,8 +500,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
         deviceContext->Unmap(constantBuffer, 0);
 
-        auto now = std::chrono::system_clock::now();
-		auto f_secs = std::chrono::duration_cast<std::chrono::duration<float>>(now - then);
 		runtime->PushParam(renderlet_id_vector, static_cast<float>(bitmap.width));
 		runtime->PushParam(renderlet_id_vector, static_cast<float>(bitmap.height));
 		runtime->PushParam(renderlet_id_vector, f_secs.count());
@@ -495,10 +511,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			auto node = tree->NodeAt(i);
 			if (node->Metadata().find("roof") != std::string::npos)
 			{
-#ifdef RLT_RIVE
-				tree_vector->NodeAt(0)->RenderVector(runtime, 0, bitmap.width, bitmap.height);
-#else
+#ifdef _DEBUG
 				deviceContext->PSSetShaderResources(0, 1, &textureViewRoof);
+#else
+				tree_vector->NodeAt(0)->RenderVector(runtime, 0, bitmap.width, bitmap.height);
 #endif
 			}
 			else if (node->Metadata().find("window") != std::string::npos)
@@ -512,7 +528,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 				
 			node->RenderFixedStride(runtime, stride);
 		}
-		//runtime->DestroyRenderTree(tree_id_vector);
 
         swapChain->Present(1, 0);
     }

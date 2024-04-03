@@ -120,6 +120,11 @@ public:
 		return m_buffer_id;
 	}
 
+	BufferType Type() const
+	{
+		return m_buffer_type;
+	}
+
 private:
 	ObjectID m_buffer_id;
 	BufferType m_buffer_type;

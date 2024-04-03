@@ -27,6 +27,7 @@ struct ID3D11DeviceContext;
 struct ID3D11Buffer;
 struct ID3D11Texture2D;
 struct ID3D11ShaderResourceView;
+struct IDXGISwapChain1;
 
 typedef unsigned int GLuint;
 
@@ -322,7 +323,8 @@ public:  // TODO: Replace with std::span
 class PalD3D11 : public Pal
 {
 public:
-	PalD3D11(ID3D11Device *device, ID3D11DeviceContext *context);
+	PalD3D11(ID3D11Device* device, ID3D11DeviceContext* context);
+	PalD3D11(ID3D11Device* device, ID3D11DeviceContext* context, IDXGISwapChain1* swapchain);
 
 	virtual ~PalD3D11();
 
@@ -351,6 +353,8 @@ private:
 
 	ID3D11Device* m_device;
 	ID3D11DeviceContext* m_device_context;
+	IDXGISwapChain1 *m_swapchain;
+
 #if defined(RLT_RIVE) && defined(_WIN32)
 	std::unique_ptr<rive::pls::PLSRenderContext> m_plsContext;
 	std::vector<std::vector<VectorLoader::Command>> m_vector_commands;
