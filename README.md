@@ -7,6 +7,13 @@
 
 Use `wander` to run `renderlets` in any software - self contained, portable modules of graphics data and code compiled to WebAssembly. 
 
+
+## 🗣️ Join Us On Discord
+
+Let's discuss the intersection of Wasm and Graphics!
+
+[![Discord Banner 3](https://discordapp.com/api/guilds/1022538123915300865/widget.png?style=banner2)](https://discord.gg/NzmehuETUu)
+
 ## What can this do?
 
 With renderlet, developers can build modern, interactive visualizations that run on any platform.
