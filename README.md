@@ -12,7 +12,7 @@ Use `wander` to run `renderlets` in any software - self contained, portable modu
 
 Let's discuss the intersection of Wasm and Graphics!
 
-[![Discord Banner 3](https://discordapp.com/api/guilds/1022538123915300865/widget.png?style=banner2)](https://discord.gg/NzmehuETUu)
+[![Discord Banner 3](https://discordapp.com/api/guilds/1232052216857231443/widget.png?style=banner2)](https://discord.gg/NzmehuETUu)
 
 ## What can this do?
 
