@@ -45,7 +45,23 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
     RegisterClassA(&wndClass);
 
-    HWND window = CreateWindowExA(0, TITLE, TITLE, WS_POPUP | WS_MAXIMIZE | WS_VISIBLE, 0, 0, 0, 0, nullptr, nullptr, nullptr, nullptr);
+    HWND window = CreateWindowExA(
+        0,                      // Optional window styles.
+        TITLE,                  // Window class
+        TITLE,                  // Window text
+        WS_OVERLAPPEDWINDOW,    // Window style (standard window)
+        CW_USEDEFAULT,          // Size and position settings
+        CW_USEDEFAULT,          // X position
+        800,                    // Width
+        600,                    // Height
+        nullptr,                // Parent window    
+        nullptr,                // Menu
+        hInstance,              // Instance handle
+        nullptr                 // Additional application data
+    );
+    ShowWindow(window, nShowCmd);
+    UpdateWindow(window);
+
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -82,24 +98,24 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
-    DXGI_SWAP_CHAIN_DESC1 swapChainDesc;
-    swapChainDesc.Width              = 0; // use window width
-    swapChainDesc.Height             = 0; // use window height
-    //swapChainDesc.Format             = DXGI_FORMAT_B8G8R8A8_UNORM_SRGB;
-	swapChainDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-    swapChainDesc.Stereo             = FALSE;
-    swapChainDesc.SampleDesc.Count   = 1;
+    DXGI_SWAP_CHAIN_DESC swapChainDesc = {};
+    swapChainDesc.BufferDesc.Width = 800;      // Match the window width
+    swapChainDesc.BufferDesc.Height = 600;     // Match the window height
+    swapChainDesc.BufferDesc.RefreshRate.Numerator = 60;
+    swapChainDesc.BufferDesc.RefreshRate.Denominator = 1;
+    swapChainDesc.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+    swapChainDesc.SampleDesc.Count = 1;
     swapChainDesc.SampleDesc.Quality = 0;
-    swapChainDesc.BufferUsage        = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-    swapChainDesc.BufferCount        = 2;
-    swapChainDesc.Scaling            = DXGI_SCALING_STRETCH;
-    swapChainDesc.SwapEffect         = DXGI_SWAP_EFFECT_DISCARD; // prefer DXGI_SWAP_EFFECT_FLIP_DISCARD, see Minimal D3D11 pt2 
-    swapChainDesc.AlphaMode          = DXGI_ALPHA_MODE_UNSPECIFIED;
-    swapChainDesc.Flags              = 0;
+    swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+    swapChainDesc.BufferCount = 1;
+    swapChainDesc.OutputWindow = window;
+    swapChainDesc.Windowed = TRUE;             // Set to TRUE for windowed mode
+    swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
+    swapChainDesc.Flags = 0;
 
-    IDXGISwapChain1* swapChain;
+    IDXGISwapChain* swapChain = nullptr;
+    dxgiFactory->CreateSwapChain(device, &swapChainDesc, &swapChain);
 
-    dxgiFactory->CreateSwapChainForHwnd(device, window, &swapChainDesc, nullptr, nullptr, &swapChain);
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
