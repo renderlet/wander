@@ -382,7 +382,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         wander::EPalType::D3D11, baseDevice, baseDeviceContext, swapChain);
 	auto runtime = wander::Factory::CreateRuntime(pal);
 
-    std::wstring dwnld_URL = L"https://rltdemoapi2.azurewebsites.net/compiler/output";
+    std::wstring dwnld_URL = L"https://rltdemoapi2.azurewebsites.net/compiler/output/test/demo.rlt";
 	std::wstring savepath = L"demo.rlt";
 	URLDownloadToFile(NULL, dwnld_URL.c_str(), savepath.c_str(), 0, NULL);
 
