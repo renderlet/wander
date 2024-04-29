@@ -1,3 +1,4 @@
+
 #define _SILENCE_ALL_CXX20_DEPRECATION_WARNINGS
 
 #pragma comment(lib, "user32")
@@ -26,7 +27,7 @@
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-#define TITLE "renderlet - adapted from Minimal D3D11 by d7samurai"
+#define TITLE L"renderlet - adapted from Minimal D3D11 by d7samurai"
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -37,15 +38,24 @@ matrix operator*(const matrix& m1, const matrix& m2);
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
+LRESULT CALLBACK DXWindowProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
+{
+    if (msg == WM_DESTROY) 
+        PostQuitMessage(0);
+    return DefWindowProc(hWnd, msg, wParam, lParam);
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
 {
 	auto then = std::chrono::system_clock::now();
 
-    WNDCLASSA wndClass = { 0, DefWindowProcA, 0, 0, 0, 0, 0, 0, 0, TITLE };
+    WNDCLASS wndClass = { 0, DXWindowProc, 0, 0, 0, 0, 0, 0, 0, TITLE };
 
-    RegisterClassA(&wndClass);
+    RegisterClass(&wndClass);
 
-    HWND window = CreateWindowExA(
+    HWND window = CreateWindowEx(
         0,                      // Optional window styles.
         TITLE,                  // Window class
         TITLE,                  // Window text
@@ -409,17 +419,18 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
         auto quit = false;
 
-        while (PeekMessageA(&msg, nullptr, 0, 0, PM_REMOVE))
+        while (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
         {
-            if (msg.message == WM_KEYDOWN)
+            if (msg.message == WM_KEYDOWN || msg.message == WM_QUIT )
             {
 				quit = true;
 				break;
             }
-                
-            DispatchMessageA(&msg);
-        }
 
+            ::TranslateMessage(&msg);
+            ::DispatchMessage(&msg);
+        }
+        
         if (quit)
         {
 			break;

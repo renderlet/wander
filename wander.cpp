@@ -338,7 +338,7 @@ PalD3D11::PalD3D11(ID3D11Device *device, ID3D11DeviceContext *context) :
 {
 }
 
-PalD3D11::PalD3D11(ID3D11Device* device, ID3D11DeviceContext* context, IDXGISwapChain1* swapchain) :
+PalD3D11::PalD3D11(ID3D11Device* device, ID3D11DeviceContext* context, IDXGISwapChain* swapchain) :
 	m_device(device), m_device_context(context), m_swapchain(swapchain)
 {
 #ifdef RLT_RIVE
@@ -1120,7 +1120,7 @@ template class wander::IPal *__cdecl wander::Factory::CreatePal<struct ID3D11Dev
 	(enum wander::EPalType, struct ID3D11Device *&, struct ID3D11DeviceContext *&);
 
 template class wander::IPal *__cdecl wander::Factory::CreatePal<struct ID3D11Device *&, struct ID3D11DeviceContext *&,
-	struct IDXGISwapChain1 *&>(enum wander::EPalType, struct ID3D11Device *&, struct ID3D11DeviceContext *&, struct IDXGISwapChain1 *&);
+	struct IDXGISwapChain *&>(enum wander::EPalType, struct ID3D11Device *&, struct ID3D11DeviceContext *&, struct IDXGISwapChain *&);
 #endif
 
 CByteArrayStreambuf::CByteArrayStreambuf(const uint8_t *begin, const size_t size) :
