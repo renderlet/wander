@@ -49,9 +49,11 @@ static void exit_with_error(const char *message, wasmtime_error_t *error, wasm_t
 int main(int argc, char **argv)
 {
 	std::string inFile = "";
-	if (argc == 2)
+	std::string outFile = "";
+	if (argc == 3)
 	{
 		inFile = argv[1];
+		outFile = argv[2];
 	}
 
 	auto conf = wasm_config_new();
@@ -157,8 +159,8 @@ int main(int argc, char **argv)
 	std::ofstream out_mtl(rawname + ".mtl");
 	*/
 
-	std::ofstream out_obj("demo.obj");
-	std::ofstream out_mtl("demo.obj.mtl");
+	std::ofstream out_obj(outFile + ".obj");
+	std::ofstream out_mtl(outFile + ".obj.mtl");
 
 	out_obj << obj;
 	out_obj.close();
