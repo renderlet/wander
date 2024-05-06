@@ -21,7 +21,7 @@ endif
 
 options := -std=c++17  -fms-extensions \
            -Wno-error=extra-tokens -Wno-quoted-include-in-framework-header -O3
-includes := -I$(wasmtimeapi)/include -I../../
+includes := -I$(wasmtimeapi)/include -I../../ -I../
 link :=  $(libglfw) $(libwasmtime) 
 
 # extras for non-linux platform build
