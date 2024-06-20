@@ -6,14 +6,24 @@
 #include "wander_lib.h"
 
 #include <array>
+#include <cassert>
 #include <sstream>
 #include <string>
 #include <locale>
 #include <algorithm>
 #include <string_view>
-#include "wasmtime.h"
 
+
+//#include "wasmtime.h"
+
+#ifndef __EMSCRIPTEN__
 #include <gl3w.c>
+#else
+#include <emscripten.h>
+#include <GLES3/gl3.h>
+#include <GLES3/gl2ext.h>
+#include <GLES3/gl3platform.h> 
+#endif
 
 
 
@@ -40,7 +50,7 @@ std::string wstring_to_utf8 (const std::wstring& str)
 
 int _wfopen_s(FILE **f, const wchar_t *name, const wchar_t *mode) {
     int ret = 0;
-    assert(f);
+    //assert(f);
     *f = fopen(wstring_to_utf8(name).c_str(), wstring_to_utf8(mode).c_str());
     /* Can't be sure about 1-to-1 mapping of errno and MS' errno_t */
     if (!*f)
@@ -287,6 +297,8 @@ private:
 
 #endif
 
+#ifndef __EMSCRIPTEN__
+
 static void exit_with_error(const char *message, wasmtime_error_t *error, wasm_trap_t *trap)
 {
 	fprintf(stderr, "error: %s\n", message);
@@ -305,6 +317,8 @@ static void exit_with_error(const char *message, wasmtime_error_t *error, wasm_t
 	wasm_byte_vec_delete(&error_message);
 	exit(1);
 }
+
+#endif
 
 template <size_t N>
 auto split_fixed(char separator, std::string_view input)
@@ -776,6 +790,33 @@ std::string RenderTreeNode::Metadata() const
 	return m_metadata;
 }
 
+#ifdef __EMSCRIPTEN__
+
+EM_ASYNC_JS(uintptr_t, init_renderlet, (), {
+	await WebAssembly.instantiateStreaming(fetch('demo.wasm'), {}).then(function(obj) {
+		Window.start = obj.instance.exports.start;
+		Window.start_mem = obj.instance.exports.memory;
+	});
+
+	return 0;
+});
+
+
+EM_ASYNC_JS(uintptr_t, run_renderlet, (), {
+	var offset = Window.start();
+
+	var length_output = new Uint8Array(Window.start_mem.buffer, offset, 4);
+	var view = new DataView(length_output.buffer, offset, 4);
+	var length = view.getUint32(0, true);
+
+	var output = new Uint8Array(Window.start_mem.buffer, offset, length);
+
+	var heapSpace = _malloc(output.length);
+	HEAP8.set(output, heapSpace);
+	return heapSpace;
+});
+#endif
+
 ObjectID wander::Runtime::LoadFromFile(const std::wstring& path)
 {
 	return LoadFromFile(path, "start");
@@ -783,6 +824,8 @@ ObjectID wander::Runtime::LoadFromFile(const std::wstring& path)
 
 ObjectID wander::Runtime::LoadFromFile(const std::wstring& path, const std::string& function)
 {
+#ifndef __EMSCRIPTEN__
+
 	auto context = WasmtimeContext{};
 
 	auto conf = wasm_config_new();
@@ -863,6 +906,13 @@ ObjectID wander::Runtime::LoadFromFile(const std::wstring& path, const std::stri
 	m_params.push_back({});
 
 	return m_contexts.size() - 1;
+
+#else
+
+	init_renderlet();
+
+	return 0;
+#endif
 }
 
 void wander::Runtime::PushParam(ObjectID renderlet_id, float value)
@@ -931,6 +981,8 @@ ObjectID wander::Runtime::BuildVector(uint32_t length, uint8_t *data, ObjectID t
 
 ObjectID wander::Runtime::Render(const ObjectID renderlet_id, ObjectID tree_id)
 {
+#ifndef __EMSCRIPTEN__
+
 	std::vector<wasmtime_val_t> args(m_params[renderlet_id].size());
 
 	for (auto& [kind, of] : args)
@@ -975,6 +1027,13 @@ ObjectID wander::Runtime::Render(const ObjectID renderlet_id, ObjectID tree_id)
 
 	// CreateBuffer with this
 	auto output = mem + offset;
+
+#else
+	auto value = run_renderlet();
+
+	uint8_t *output = reinterpret_cast<uint8_t *>(value + 4);
+
+#endif
 
 	BufferDescriptor desc { BufferType::Vertex };
 
@@ -1048,6 +1107,7 @@ void wander::Runtime::DestroyRenderTree(ObjectID tree_id)
 
 void wander::Runtime::Release()
 {
+#ifndef __EMSCRIPTEN__
 	for (auto i = 0; i < m_render_trees.size(); ++i)
 	{
 		DestroyRenderTree(i);
@@ -1071,7 +1131,7 @@ void wander::Runtime::Release()
 	{
 		wasm_engine_delete(m_engine);
 	}
-
+#endif
 	m_pal->Release();
 }
 

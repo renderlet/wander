@@ -9,10 +9,12 @@
 #include <utility>
 #include <memory>
 
+#ifndef __EMSCRIPTEN__
 // TODO - this should only be a private dependency
 // Required for wasmtime (missing header)
 #include <string>
 #include "wasmtime.h"
+#endif
 
 namespace rive
 {
@@ -451,8 +453,10 @@ private:
 
 	ObjectID BuildVector(uint32_t length, uint8_t *data, ObjectID tree_id);
 
+#ifndef __EMSCRIPTEN__
 	struct WasmtimeContext
 	{
+
 		wasm_engine_t* Engine = nullptr;
 		wasmtime_store_t* Store = nullptr;
 		wasmtime_context_t* Context = nullptr;
@@ -463,6 +467,10 @@ private:
 	};
 
 	wasm_engine_t *m_engine = nullptr;
+#else
+	struct WasmtimeContext{};
+#endif
+
 
 	std::vector<WasmtimeContext> m_contexts;
 	std::vector<std::queue<Param>> m_params;
