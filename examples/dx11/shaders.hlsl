@@ -40,7 +40,7 @@ vs_out vs_main(vs_in input)
 
 float4 ps_main(vs_out input) : SV_TARGET
 {
-    //return mytexture.Sample(mysampler, input.texcoord) * input.color;
+    return mytexture.Sample(mysampler, input.texcoord) * input.color;
     //return mytexture.Sample(mysampler, input.texcoord);
-    return input.color;
+    //return input.color;
 }

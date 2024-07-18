@@ -469,6 +469,7 @@ private:
 	wasm_engine_t *m_engine = nullptr;
 #else
 	struct WasmtimeContext{};
+	int m_context_count = 0;
 #endif
 
 

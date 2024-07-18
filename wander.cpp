@@ -792,29 +792,41 @@ std::string RenderTreeNode::Metadata() const
 
 #ifdef __EMSCRIPTEN__
 
-EM_ASYNC_JS(uintptr_t, init_renderlet, (), {
-	await WebAssembly.instantiateStreaming(fetch('demo.wasm'), {}).then(function(obj) {
-		Window.start = obj.instance.exports.start;
-		Window.start_mem = obj.instance.exports.memory;
+EM_ASYNC_JS(uintptr_t, init_renderlet, (const char *str), {
+	if (Window.renderlet_id === undefined){
+		Window.renderlet_id = 0;
+	}
+	else {
+		++Window.renderlet_id;
+	}
+	
+	await WebAssembly.instantiateStreaming(fetch(UTF8ToString(str)), {}).then(function(obj) {
+		Window["start_" + Window.renderlet_id] = obj.instance.exports.start;
+		Window["start_mem_" + Window.renderlet_id] = obj.instance.exports.memory;
 	});
-
-	return 0;
+	return Window.renderlet_id;
 });
 
 
-EM_ASYNC_JS(uintptr_t, run_renderlet, (), {
-	var offset = Window.start();
+EM_ASYNC_JS(uintptr_t, run_renderlet, (int id), {
+	var offset = Window["start_" + id]();
 
-	var length_output = new Uint8Array(Window.start_mem.buffer, offset, 4);
+	var length_output = new Uint8Array(Window["start_mem_" + id].buffer, offset, 4);
 	var view = new DataView(length_output.buffer, offset, 4);
 	var length = view.getUint32(0, true);
 
-	var output = new Uint8Array(Window.start_mem.buffer, offset, length);
+	var output = new Uint8Array(Window["start_mem_" + id].buffer, offset, length);
 
 	var heapSpace = _malloc(output.length);
 	HEAP8.set(output, heapSpace);
 	return heapSpace;
 });
+
+EM_ASYNC_JS(void, delete_renderlet, (int id), {
+	Window["start_" + id] = {};
+	Window["start_mem_" + id] = {};
+});
+
 #endif
 
 ObjectID wander::Runtime::LoadFromFile(const std::wstring& path)
@@ -909,9 +921,10 @@ ObjectID wander::Runtime::LoadFromFile(const std::wstring& path, const std::stri
 
 #else
 
-	init_renderlet();
+	//init_renderlet(path.c_str());
+	m_context_count = init_renderlet("demo.wasm") + 1;
 
-	return 0;
+	return m_context_count - 1;
 #endif
 }
 
@@ -1029,7 +1042,7 @@ ObjectID wander::Runtime::Render(const ObjectID renderlet_id, ObjectID tree_id)
 	auto output = mem + offset;
 
 #else
-	auto value = run_renderlet();
+	auto value = run_renderlet(renderlet_id);
 
 	uint8_t *output = reinterpret_cast<uint8_t *>(value + 4);
 
@@ -1130,6 +1143,11 @@ void wander::Runtime::Release()
 	if (m_engine)
 	{
 		wasm_engine_delete(m_engine);
+	}
+#else
+	for (auto i = 0; i < m_context_count; ++i)
+	{
+		delete_renderlet(i);
 	}
 #endif
 	m_pal->Release();

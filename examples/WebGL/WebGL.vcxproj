@@ -37,12 +37,13 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Emscripten'">
     <Link>
-      <AdditionalOptions>-s USE_GLFW=3 %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>-s USE_GLFW=3 -sASYNCIFY -sINITIAL_MEMORY=50331648 -s MIN_WEBGL_VERSION=2 -sFETCH %(AdditionalOptions)</AdditionalOptions>
     </Link>
+    <ClCompile />
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Emscripten'">
     <Link>
-      <AdditionalOptions>-s USE_GLFW=3 -sASYNCIFY -sINITIAL_MEMORY=50331648 %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>-s USE_GLFW=3 -sASYNCIFY -sINITIAL_MEMORY=50331648 -s MIN_WEBGL_VERSION=2 -sFETCH %(AdditionalOptions)</AdditionalOptions>
     </Link>
     <ClCompile>
       <AdditionalIncludeDirectories>$(SolutionDir)..\;$(SolutionDir)</AdditionalIncludeDirectories>
@@ -50,7 +51,11 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\wander.cpp" />
+    <ClCompile Include="..\OpenGL\bmpread.c" />
     <ClCompile Include="Main.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\OpenGL\bmpread.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
