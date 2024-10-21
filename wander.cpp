@@ -1039,7 +1039,7 @@ ObjectID wander::Runtime::Render(const ObjectID renderlet_id, ObjectID tree_id)
 	auto offset = results[0].of.i32; 
 
 	// CreateBuffer with this
-	auto output = mem + offset;
+	auto output = mem + offset + 4;
 
 #else
 	auto value = run_renderlet(renderlet_id);
