@@ -518,6 +518,9 @@ ObjectID PalD3D11::UpdateVector(int length, uint8_t data[], ObjectID buffer_id)
 
 void PalD3D11::DrawTriangleList(ObjectID buffer_id, int offset, int length, unsigned int stride)
 {
+	if (buffer_id < 0)
+		return;
+
 	const UINT strides = stride;
 	constexpr UINT offsets = 0;
 
@@ -785,6 +788,12 @@ void RenderTreeNode::RenderVector(IRuntime *runtime, int slot, int width, int he
 	static_cast<Runtime*>(runtime)->PalImpl()->DrawVector(m_buffer_id, slot, width, height);
 }
 
+void RenderTreeNode::SetPooledBuffer(ObjectID buffer_id, int offset)
+{
+	m_buffer_id = buffer_id;
+	m_offset += offset;
+}
+
 std::string RenderTreeNode::Metadata() const
 {
 	return m_metadata;
@@ -801,21 +810,21 @@ EM_ASYNC_JS(uintptr_t, init_renderlet, (const char *str), {
 	}
 	
 	await WebAssembly.instantiateStreaming(fetch(UTF8ToString(str)), {}).then(function(obj) {
-		Window["start_" + Window.renderlet_id] = obj.instance.exports.start;
-		Window["start_mem_" + Window.renderlet_id] = obj.instance.exports.memory;
+		Window["Start_" + Window.renderlet_id] = obj.instance.exports.Start;
+		Window["Start_mem_" + Window.renderlet_id] = obj.instance.exports.memory;
 	});
 	return Window.renderlet_id;
 });
 
 
 EM_ASYNC_JS(uintptr_t, run_renderlet, (int id), {
-	var offset = Window["start_" + id]();
+	var offset = Window["Start_" + id]();
 
-	var length_output = new Uint8Array(Window["start_mem_" + id].buffer, offset, 4);
+	var length_output = new Uint8Array(Window["Start_mem_" + id].buffer, offset, 4);
 	var view = new DataView(length_output.buffer, offset, 4);
 	var length = view.getUint32(0, true);
 
-	var output = new Uint8Array(Window["start_mem_" + id].buffer, offset, length);
+	var output = new Uint8Array(Window["Start_mem_" + id].buffer, offset, length);
 
 	var heapSpace = _malloc(output.length);
 	HEAP8.set(output, heapSpace);
@@ -823,15 +832,15 @@ EM_ASYNC_JS(uintptr_t, run_renderlet, (int id), {
 });
 
 EM_ASYNC_JS(void, delete_renderlet, (int id), {
-	Window["start_" + id] = {};
-	Window["start_mem_" + id] = {};
+	Window["Start_" + id] = {};
+	Window["Start_mem_" + id] = {};
 });
 
 #endif
 
 ObjectID wander::Runtime::LoadFromFile(const std::wstring& path)
 {
-	return LoadFromFile(path, "start");
+	return LoadFromFile(path, "Start");
 }
 
 ObjectID wander::Runtime::LoadFromFile(const std::wstring& path, const std::string& function)
@@ -992,7 +1001,31 @@ ObjectID wander::Runtime::BuildVector(uint32_t length, uint8_t *data, ObjectID t
 	return m_render_trees.size() - 1;
 }
 
-ObjectID wander::Runtime::Render(const ObjectID renderlet_id, ObjectID tree_id)
+void Runtime::CreatePooledBuffer(uint32_t length, uint8_t *data, ObjectID tree_id)
+{
+	auto offset = 0;
+	if (m_staging_buffer == nullptr)
+	{
+		m_staging_buffer = std::make_unique<uint8_t[]>(300 * 1024 * 1024); // MB
+	}
+	else
+	{
+		const auto& sub = m_sub_buffers.back();
+		offset = sub.offset + sub.length;
+	}
+
+	memcpy(&m_staging_buffer[offset], data, length);
+
+	m_sub_buffers.emplace_back(
+		SubBuffer {
+			offset,
+			length,
+			tree_id
+		}
+	);
+}
+
+ObjectID Runtime::Render(const ObjectID renderlet_id, ObjectID tree_id, bool pool)
 {
 #ifndef __EMSCRIPTEN__
 
@@ -1070,7 +1103,8 @@ ObjectID wander::Runtime::Render(const ObjectID renderlet_id, ObjectID tree_id)
 		return BuildVector(vert_length, verts, tree_id);
 	}
 
-	auto id = m_pal->CreateBuffer(desc, vert_length, verts);
+	auto id = pool ? -1 : m_pal->CreateBuffer(desc, vert_length, verts);
+	//auto id = -1;
 
 	auto mat_length = *reinterpret_cast<uint32_t *>(verts + vert_length);
 	auto mats = verts + vert_length + 4;
@@ -1092,15 +1126,44 @@ ObjectID wander::Runtime::Render(const ObjectID renderlet_id, ObjectID tree_id)
 
 		nodes.push_back(node);
 	}
-
-
 	
 	m_render_trees.push_back(std::make_unique<RenderTree>(nodes));
+
+	if (pool)
+	{
+		CreatePooledBuffer(vert_length, verts, m_render_trees.size() - 1);
+	}
 
 	return m_render_trees.size() - 1;
 }
 
-const RenderTree* wander::Runtime::GetRenderTree(ObjectID tree_id)
+void Runtime::UploadBufferPool(unsigned int stride)
+{
+	const auto& last = m_sub_buffers.back();
+	const auto length = last.offset + last.length;
+
+	const BufferDescriptor desc{BufferType::Vertex};
+	const auto id = m_pal->CreateBuffer(desc, length, m_staging_buffer.get());
+
+	auto offset = 0;
+
+	for (const auto& sub: m_sub_buffers)
+	{
+		const auto* tree = m_render_trees[sub.tree_id].get();
+
+		for (auto i = 0; i < tree->Length(); ++i)
+		{
+			const_cast<RenderTreeNode*>(tree->NodeAt(i))->SetPooledBuffer(id, offset);
+		}
+
+		offset += sub.length / stride;
+	}
+
+	m_staging_buffer.reset(nullptr);
+	m_sub_buffers.clear();
+}
+
+const RenderTree *wander::Runtime::GetRenderTree(ObjectID tree_id)
 {
 	return m_render_trees[tree_id].get();
 }

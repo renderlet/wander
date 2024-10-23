@@ -437,7 +437,10 @@ public:
 	void PushParam(ObjectID renderlet_id, uint64_t value) override;
 	void ResetStack(ObjectID renderlet_id) override;
 
-	ObjectID Render(ObjectID renderlet_id, ObjectID tree_id = -1) override;
+	ObjectID Render(ObjectID renderlet_id, ObjectID tree_id = -1, bool pool = false) override;
+
+	// void UploadBufferPool(ObjectID pool_id);
+	void UploadBufferPool(unsigned int stride) override;
 
 	const RenderTree *GetRenderTree(ObjectID tree_id) override;
 	void DestroyRenderTree(ObjectID tree_id) override;
@@ -452,11 +455,11 @@ public:
 private:
 
 	ObjectID BuildVector(uint32_t length, uint8_t *data, ObjectID tree_id);
+	void CreatePooledBuffer(uint32_t length, uint8_t *data, ObjectID tree_id);
 
 #ifndef __EMSCRIPTEN__
 	struct WasmtimeContext
 	{
-
 		wasm_engine_t* Engine = nullptr;
 		wasmtime_store_t* Store = nullptr;
 		wasmtime_context_t* Context = nullptr;
@@ -472,6 +475,15 @@ private:
 	int m_context_count = 0;
 #endif
 
+	struct SubBuffer
+	{
+		int offset;
+		uint32_t length;
+		ObjectID tree_id;
+	};
+
+	std::vector<SubBuffer> m_sub_buffers;
+	std::unique_ptr<unsigned char[]> m_staging_buffer;
 
 	std::vector<WasmtimeContext> m_contexts;
 	std::vector<std::queue<Param>> m_params;

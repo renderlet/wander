@@ -112,6 +112,8 @@ public:
 
 	void RenderVector(IRuntime *runtime, int slot, int width, int height) const;
 
+	void SetPooledBuffer(ObjectID buffer_id, int offset);
+
 	std::string Metadata() const;
 
 	// This should be private
@@ -175,7 +177,9 @@ public:
 	virtual void PushParam(ObjectID renderlet_id, uint64_t value) = 0;
 	virtual void ResetStack(ObjectID renderlet_id) = 0;
 
-	virtual ObjectID Render(ObjectID renderlet_id, ObjectID tree_id = -1) = 0;
+	virtual ObjectID Render(ObjectID renderlet_id, ObjectID tree_id = -1, bool pool = false) = 0;
+
+	virtual void UploadBufferPool(unsigned int stride) = 0;
 
 	virtual const RenderTree* GetRenderTree(ObjectID tree_id) = 0;
 	virtual void DestroyRenderTree(ObjectID tree_id) = 0;
