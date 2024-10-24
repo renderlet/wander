@@ -168,7 +168,7 @@ private:
 class IRuntime : public Object
 {
 public:
-	virtual ObjectID LoadFromFile(const std::wstring &path) = 0;
+	virtual ObjectID LoadFromFile(const std::wstring& path) = 0;
 	virtual ObjectID LoadFromFile(const std::wstring& path, const std::string& function) = 0;
 
 	virtual void PushParam(ObjectID renderlet_id, float value) = 0;
@@ -178,6 +178,8 @@ public:
 	virtual void ResetStack(ObjectID renderlet_id) = 0;
 
 	virtual ObjectID Render(ObjectID renderlet_id, ObjectID tree_id = -1, bool pool = false) = 0;
+
+	virtual const float* const ExecuteFloat4(ObjectID renderlet_id, const std::string &function) = 0;
 
 	virtual void UploadBufferPool(unsigned int stride) = 0;
 

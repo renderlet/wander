@@ -438,6 +438,7 @@ public:
 	void ResetStack(ObjectID renderlet_id) override;
 
 	ObjectID Render(ObjectID renderlet_id, ObjectID tree_id = -1, bool pool = false) override;
+	const float* const ExecuteFloat4(ObjectID renderlet_id, const std::string& function) override;
 
 	// void UploadBufferPool(ObjectID pool_id);
 	void UploadBufferPool(unsigned int stride) override;

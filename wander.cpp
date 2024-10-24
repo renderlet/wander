@@ -1104,7 +1104,6 @@ ObjectID Runtime::Render(const ObjectID renderlet_id, ObjectID tree_id, bool poo
 	}
 
 	auto id = pool ? -1 : m_pal->CreateBuffer(desc, vert_length, verts);
-	//auto id = -1;
 
 	auto mat_length = *reinterpret_cast<uint32_t *>(verts + vert_length);
 	auto mats = verts + vert_length + 4;
@@ -1136,6 +1135,59 @@ ObjectID Runtime::Render(const ObjectID renderlet_id, ObjectID tree_id, bool poo
 
 	return m_render_trees.size() - 1;
 }
+
+const float* const Runtime::ExecuteFloat4(ObjectID renderlet_id, const std::string& function)
+{
+	std::vector<wasmtime_val_t> args(m_params[renderlet_id].size());
+
+	for (auto &[kind, of] : args)
+	{
+		switch (const auto [Type, Value] = m_params[renderlet_id].front(); Type)
+		{
+		case Param::Int32:
+			kind = WASMTIME_I32;
+			of.i32 = Value.I32;
+			break;
+		case Param::Int64:
+			kind = WASMTIME_I64;
+			of.i64 = Value.I64;
+			break;
+		case Param::Float32:
+			kind = WASMTIME_F32;
+			of.f32 = Value.F32;
+			break;
+		case Param::Float64:
+			kind = WASMTIME_F64;
+			of.f64 = Value.F64;
+			break;
+		}
+
+		m_params[renderlet_id].pop();
+	}
+
+	auto& context = m_contexts[renderlet_id];
+
+	wasmtime_val_t results[1];
+
+	wasmtime_extern_t expression{};
+
+	if (!wasmtime_linker_get(context.Linker, context.Context, "", 0, 
+		function.c_str(), function.length(), &expression))
+		return nullptr;
+
+	wasm_trap_t *trap = nullptr;
+	wasmtime_error_t *error =
+		wasmtime_func_call(context.Context, &expression.of.func, args.data(), args.size(), results, 1, &trap);
+
+	if (error != NULL || trap != NULL)
+		exit_with_error("failed to call expression", error, trap);
+
+	auto mem = wasmtime_memory_data(context.Context, &context.Memory.of.memory);
+	auto offset = results[0].of.i32;
+
+	return reinterpret_cast<float*>(mem + offset);
+}
+
 
 void Runtime::UploadBufferPool(unsigned int stride)
 {
