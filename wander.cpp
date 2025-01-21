@@ -1116,7 +1116,7 @@ ObjectID Runtime::Render(const ObjectID renderlet_id, ObjectID tree_id, bool poo
 	std::istringstream ss(mat);
 	while (std::getline(ss, line))
 	{
-		auto values = split_fixed<4>(',', line);
+		auto values = split_fixed<5>(',', line);
 
 		int VertexOffset = atoi(values[1].data());
 		int VertexLength = atoi(values[2].data());
