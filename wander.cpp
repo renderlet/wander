@@ -1006,7 +1006,7 @@ void Runtime::CreatePooledBuffer(uint32_t length, uint8_t *data, ObjectID tree_i
 	auto offset = 0;
 	if (m_staging_buffer == nullptr)
 	{
-		m_staging_buffer = std::make_unique<uint8_t[]>(300 * 1024 * 1024); // MB
+		m_staging_buffer = std::make_unique<uint8_t[]>(600 * 1024 * 1024); // MB
 	}
 	else
 	{
@@ -1233,6 +1233,20 @@ void wander::Runtime::DestroyRenderTree(ObjectID tree_id)
 	m_render_trees[tree_id]->Clear();
 }
 
+void wander::Runtime::Unload(ObjectID renderlet_id)
+{
+	if (renderlet_id >= 0 && m_contexts[renderlet_id].Module != nullptr)
+	{
+		ResetStack(renderlet_id);
+		wasmtime_module_delete(m_contexts[renderlet_id].Module);
+		wasmtime_store_delete(m_contexts[renderlet_id].Store);
+		wasmtime_linker_delete(m_contexts[renderlet_id].Linker);
+		m_contexts[renderlet_id].Module = nullptr;
+		m_contexts[renderlet_id].Store = nullptr;
+		m_contexts[renderlet_id].Linker = nullptr;
+	}
+}
+
 void wander::Runtime::Release()
 {
 #ifndef __EMSCRIPTEN__
@@ -1245,11 +1259,7 @@ void wander::Runtime::Release()
 
 	for (auto i = 0; i < m_contexts.size(); ++i)
 	{
-		ResetStack(i);
-
-		wasmtime_module_delete(m_contexts[i].Module);
-		wasmtime_store_delete(m_contexts[i].Store);
-		wasmtime_linker_delete(m_contexts[i].Linker);
+		Unload(i);
 	}
 
 	m_contexts.clear();

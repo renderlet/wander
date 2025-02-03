@@ -447,6 +447,7 @@ public:
 	void DestroyRenderTree(ObjectID tree_id) override;
 
 	void Release() override;
+	void Unload(ObjectID renderlet_id) override;
 
 	Pal* PalImpl() const
 	{
@@ -461,7 +462,6 @@ private:
 #ifndef __EMSCRIPTEN__
 	struct WasmtimeContext
 	{
-		wasm_engine_t* Engine = nullptr;
 		wasmtime_store_t* Store = nullptr;
 		wasmtime_context_t* Context = nullptr;
 		wasmtime_linker_t* Linker = nullptr;
@@ -470,7 +470,7 @@ private:
 		wasmtime_extern_t Memory {};
 	};
 
-	wasm_engine_t *m_engine = nullptr;
+	wasm_engine_t* m_engine = nullptr;
 #else
 	struct WasmtimeContext{};
 	int m_context_count = 0;

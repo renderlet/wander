@@ -8,6 +8,7 @@
 #define WASMTIME_CONFIG_H
 
 #include <wasm.h>
+#include <wasmtime/conf.h>
 #include <wasmtime/error.h>
 
 #ifdef __cplusplus
@@ -140,6 +141,8 @@ WASMTIME_CONFIG_PROP(void, epoch_interruption, bool)
  */
 WASMTIME_CONFIG_PROP(void, max_wasm_stack, size_t)
 
+#ifdef WASMTIME_FEATURE_THREADS
+
 /**
  * \brief Configures whether the WebAssembly threading proposal is enabled.
  *
@@ -148,6 +151,8 @@ WASMTIME_CONFIG_PROP(void, max_wasm_stack, size_t)
  * Note that threads are largely unimplemented in Wasmtime at this time.
  */
 WASMTIME_CONFIG_PROP(void, wasm_threads, bool)
+
+#endif // WASMTIME_FEATURE_THREADS
 
 /**
  * \brief Configures whether the WebAssembly tail call proposal is enabled.
@@ -163,6 +168,21 @@ WASMTIME_CONFIG_PROP(void, wasm_tail_call, bool)
  * This setting is `false` by default.
  */
 WASMTIME_CONFIG_PROP(void, wasm_reference_types, bool)
+
+/**
+ * \brief Configures whether the WebAssembly typed function reference types
+ * proposal is enabled.
+ *
+ * This setting is `false` by default.
+ */
+WASMTIME_CONFIG_PROP(void, wasm_function_references, bool)
+
+/**
+ * \brief Configures whether the WebAssembly GC proposal is enabled.
+ *
+ * This setting is `false` by default.
+ */
+WASMTIME_CONFIG_PROP(void, wasm_gc, bool)
 
 /**
  * \brief Configures whether the WebAssembly SIMD proposal is
@@ -221,11 +241,25 @@ WASMTIME_CONFIG_PROP(void, wasm_multi_memory, bool)
 WASMTIME_CONFIG_PROP(void, wasm_memory64, bool)
 
 /**
+ * \brief Configures whether the WebAssembly wide-arithmetic proposal is
+ * enabled.
+ *
+ * This setting is `false` by default.
+ */
+WASMTIME_CONFIG_PROP(void, wasm_wide_arithmetic, bool)
+
+#ifdef WASMTIME_FEATURE_COMPILER
+
+/**
  * \brief Configures how JIT code will be compiled.
  *
  * This setting is #WASMTIME_STRATEGY_AUTO by default.
  */
 WASMTIME_CONFIG_PROP(void, strategy, wasmtime_strategy_t)
+
+#endif // WASMTIME_FEATURE_COMPILER
+
+#ifdef WASMTIME_FEATURE_PARALLEL_COMPILATION
 
 /**
  * \brief Configure whether wasmtime should compile a module using multiple
@@ -235,6 +269,10 @@ WASMTIME_CONFIG_PROP(void, strategy, wasmtime_strategy_t)
  * https://docs.wasmtime.dev/api/wasmtime/struct.Config.html#method.parallel_compilation.
  */
 WASMTIME_CONFIG_PROP(void, parallel_compilation, bool)
+
+#endif // WASMTIME_FEATURE_PARALLEL_COMPILATION
+
+#ifdef WASMTIME_FEATURE_COMPILER
 
 /**
  * \brief Configures whether Cranelift's debug verifier is enabled.
@@ -268,6 +306,8 @@ WASMTIME_CONFIG_PROP(void, cranelift_nan_canonicalization, bool)
  */
 WASMTIME_CONFIG_PROP(void, cranelift_opt_level, wasmtime_opt_level_t)
 
+#endif // WASMTIME_FEATURE_COMPILER
+
 /**
  * \brief Configures the profiling strategy used for JIT code.
  *
@@ -276,47 +316,41 @@ WASMTIME_CONFIG_PROP(void, cranelift_opt_level, wasmtime_opt_level_t)
 WASMTIME_CONFIG_PROP(void, profiler, wasmtime_profiling_strategy_t)
 
 /**
- * \brief Configures the “static” style of memory to always be used.
+ * \brief Configures whether `memory_reservation` is the maximal size of linear
+ * memory.
  *
  * This setting is `false` by default.
  *
  * For more information see the Rust documentation at
- * https://bytecodealliance.github.io/wasmtime/api/wasmtime/struct.Config.html#method.static_memory_forced.
+ * https://bytecodealliance.github.io/wasmtime/api/wasmtime/struct.Config.html#method.memory_may_move.
  */
-WASMTIME_CONFIG_PROP(void, static_memory_forced, bool)
+WASMTIME_CONFIG_PROP(void, memory_may_move, bool)
 
 /**
- * \brief Configures the maximum size for memory to be considered "static"
+ * \brief Configures the size, in bytes, of initial memory reservation size for
+ * linear memories.
  *
  * For more information see the Rust documentation at
- * https://bytecodealliance.github.io/wasmtime/api/wasmtime/struct.Config.html#method.static_memory_maximum_size.
+ * https://bytecodealliance.github.io/wasmtime/api/wasmtime/struct.Config.html#method.memory_reservation.
  */
-WASMTIME_CONFIG_PROP(void, static_memory_maximum_size, uint64_t)
+WASMTIME_CONFIG_PROP(void, memory_reservation, uint64_t)
 
 /**
- * \brief Configures the guard region size for "static" memory.
+ * \brief Configures the guard region size for linear memory.
  *
  * For more information see the Rust documentation at
- * https://bytecodealliance.github.io/wasmtime/api/wasmtime/struct.Config.html#method.static_memory_guard_size.
+ * https://bytecodealliance.github.io/wasmtime/api/wasmtime/struct.Config.html#method.memory_guard_size.
  */
-WASMTIME_CONFIG_PROP(void, static_memory_guard_size, uint64_t)
-
-/**
- * \brief Configures the guard region size for "dynamic" memory.
- *
- * For more information see the Rust documentation at
- * https://bytecodealliance.github.io/wasmtime/api/wasmtime/struct.Config.html#method.dynamic_memory_guard_size.
- */
-WASMTIME_CONFIG_PROP(void, dynamic_memory_guard_size, uint64_t)
+WASMTIME_CONFIG_PROP(void, memory_guard_size, uint64_t)
 
 /**
  * \brief Configures the size, in bytes, of the extra virtual memory space
- * reserved after a “dynamic” memory for growing into.
+ * reserved for memories to grow into after being relocated.
  *
  * For more information see the Rust documentation at
- * https://docs.wasmtime.dev/api/wasmtime/struct.Config.html#method.dynamic_memory_reserved_for_growth
+ * https://docs.wasmtime.dev/api/wasmtime/struct.Config.html#method.memory_reservation_for_growth
  */
-WASMTIME_CONFIG_PROP(void, dynamic_memory_reserved_for_growth, uint64_t)
+WASMTIME_CONFIG_PROP(void, memory_reservation_for_growth, uint64_t)
 
 /**
  * \brief Configures whether to generate native unwind information (e.g.
@@ -328,6 +362,8 @@ WASMTIME_CONFIG_PROP(void, dynamic_memory_reserved_for_growth, uint64_t)
  * https://docs.wasmtime.dev/api/wasmtime/struct.Config.html#method.native_unwind_info
  */
 WASMTIME_CONFIG_PROP(void, native_unwind_info, bool)
+
+#ifdef WASMTIME_FEATURE_CACHE
 
 /**
  * \brief Enables Wasmtime's cache and loads configuration from the specified
@@ -344,6 +380,8 @@ WASMTIME_CONFIG_PROP(void, native_unwind_info, bool)
 WASM_API_EXTERN wasmtime_error_t *
 wasmtime_config_cache_config_load(wasm_config_t *, const char *);
 
+#endif // WASMTIME_FEATURE_CACHE
+
 /**
  * \brief Configures the target triple that this configuration will produce
  * machine code for.
@@ -357,6 +395,8 @@ wasmtime_config_cache_config_load(wasm_config_t *, const char *);
  * https://docs.wasmtime.dev/api/wasmtime/struct.Config.html#method.config
  */
 WASMTIME_CONFIG_PROP(wasmtime_error_t *, target, const char *)
+
+#ifdef WASMTIME_FEATURE_COMPILER
 
 /**
  * \brief Enables a target-specific flag in Cranelift.
@@ -383,6 +423,8 @@ WASM_API_EXTERN void wasmtime_config_cranelift_flag_set(wasm_config_t *,
                                                         const char *key,
                                                         const char *value);
 
+#endif // WASMTIME_FEATURE_COMPILER
+
 /**
  * \brief Configures whether, when on macOS, Mach ports are used for exception
  * handling instead of traditional Unix-based signal handling.
@@ -404,7 +446,7 @@ WASMTIME_CONFIG_PROP(void, macos_use_mach_ports, bool)
  * https://docs.wasmtime.dev/api/wasmtime/trait.LinearMemory.html
  */
 typedef uint8_t *(*wasmtime_memory_get_callback_t)(void *env, size_t *byte_size,
-                                                   size_t *maximum_byte_size);
+                                                   size_t *byte_capacity);
 
 /**
  * Grow the memory to the `new_size` in bytes.

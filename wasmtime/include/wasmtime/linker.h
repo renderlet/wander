@@ -8,6 +8,7 @@
 #define WASMTIME_LINKER_H
 
 #include <wasm.h>
+#include <wasmtime/conf.h>
 #include <wasmtime/error.h>
 #include <wasmtime/extern.h>
 #include <wasmtime/store.h>
@@ -41,6 +42,15 @@ typedef struct wasmtime_linker wasmtime_linker_t;
  * is expected to delete the returned linker.
  */
 WASM_API_EXTERN wasmtime_linker_t *wasmtime_linker_new(wasm_engine_t *engine);
+
+/**
+ * \brief Clones existing linker.
+ *
+ * This function does not take ownership of the linker argument, and the caller
+ * is expected to delete the returned linker.
+ */
+WASM_API_EXTERN wasmtime_linker_t *
+wasmtime_linker_clone(wasmtime_linker_t *linker);
 
 /**
  * \brief Deletes a linker
@@ -124,6 +134,8 @@ WASM_API_EXTERN wasmtime_error_t *wasmtime_linker_define_func_unchecked(
     wasmtime_func_unchecked_callback_t cb, void *data,
     void (*finalizer)(void *));
 
+#ifdef WASMTIME_FEATURE_WASI
+
 /**
  * \brief Defines WASI functions in this linker.
  *
@@ -143,6 +155,8 @@ WASM_API_EXTERN wasmtime_error_t *wasmtime_linker_define_func_unchecked(
  */
 WASM_API_EXTERN wasmtime_error_t *
 wasmtime_linker_define_wasi(wasmtime_linker_t *linker);
+
+#endif // WASMTIME_FEATURE_WASI
 
 /**
  * \brief Defines an instance under the specified name in this linker.
@@ -260,7 +274,7 @@ WASM_API_EXTERN bool wasmtime_linker_get(const wasmtime_linker_t *linker,
                                          wasmtime_extern_t *item);
 
 /**
- * \brief Preform all the checks for instantiating `module` with the linker,
+ * \brief Perform all the checks for instantiating `module` with the linker,
  *        except that instantiation doesn't actually finish.
  *
  * \param linker the linker used to instantiate the provided module.

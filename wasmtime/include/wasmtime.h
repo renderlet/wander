@@ -90,7 +90,7 @@
  *   issue](https://github.com/bytecodealliance/wasmtime/issues/new).
  *
  * * [C embedding
- *   examples](https://bytecodealliance.github.io/wasmtime/examples-c-embed.html)
+ *   examples](https://bytecodealliance.github.io/wasmtime/lang-c.html)
  *   are available online and are tested from the Wasmtime repository itself.
  *
  * * [Contribution documentation for
@@ -152,9 +152,7 @@
  * provided access to it. For example in a host function created with
  * #wasmtime_func_new you can use #wasmtime_context_t in the host function
  * callback. This is because an argument, a #wasmtime_caller_t, provides access
- * to #wasmtime_context_t. On the other hand a destructor passed to
- * #wasmtime_externref_new, however, cannot use a #wasmtime_context_t because
- * it was not provided access to one. Doing so may lead to memory unsafety.
+ * to #wasmtime_context_t.
  *
  * ### Stores
  *
@@ -182,6 +180,7 @@
 #define WASMTIME_API_H
 
 #include <wasi.h>
+#include <wasmtime/conf.h>
 // clang-format off
 // IWYU pragma: begin_exports
 #include <wasmtime/config.h>
@@ -194,6 +193,8 @@
 #include <wasmtime/linker.h>
 #include <wasmtime/memory.h>
 #include <wasmtime/module.h>
+#include <wasmtime/profiling.h>
+#include <wasmtime/sharedmemory.h>
 #include <wasmtime/store.h>
 #include <wasmtime/table.h>
 #include <wasmtime/trap.h>
@@ -205,11 +206,11 @@
 /**
  * \brief Wasmtime version string.
  */
-#define WASMTIME_VERSION "18.0.2"
+#define WASMTIME_VERSION "29.0.1"
 /**
  * \brief Wasmtime major version number.
  */
-#define WASMTIME_VERSION_MAJOR 18
+#define WASMTIME_VERSION_MAJOR 29
 /**
  * \brief Wasmtime minor version number.
  */
@@ -217,14 +218,16 @@
 /**
  * \brief Wasmtime patch version number.
  */
-#define WASMTIME_VERSION_PATCH 2
+#define WASMTIME_VERSION_PATCH 1
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+#ifdef WASMTIME_FEATURE_WAT
+
 /**
- * \brief Converts from the text format of WebAssembly to to the binary format.
+ * \brief Converts from the text format of WebAssembly to the binary format.
  *
  * \param wat this it the input pointer with the WebAssembly Text Format inside
  *        of it. This will be parsed and converted to the binary format.
@@ -240,6 +243,8 @@ extern "C" {
  */
 WASM_API_EXTERN wasmtime_error_t *
 wasmtime_wat2wasm(const char *wat, size_t wat_len, wasm_byte_vec_t *ret);
+
+#endif
 
 #ifdef __cplusplus
 } // extern "C"

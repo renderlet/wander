@@ -34,6 +34,7 @@ script:
 ```sh
 curl https://wasmtime.dev/install.sh -sSf | bash
 ```
+This script installs into `$WASMTIME_HOME` (defaults to `$HOME/.wasmtime`), and executable is placed in `$WASMTIME_HOME/bin`.
 
 Windows or otherwise interested users can download installers and
 binaries directly from the [GitHub
@@ -54,11 +55,16 @@ fn main() {
 and compile/run it with:
 
 ```sh
-$ rustup target add wasm32-wasi
-$ rustc hello.rs --target wasm32-wasi
+$ rustup target add wasm32-wasip1
+$ rustc hello.rs --target wasm32-wasip1
 $ wasmtime hello.wasm
 Hello, world!
 ```
+
+(Note: make sure you installed Rust using the `rustup` method in the official
+instructions above, and do not have a copy of the Rust toolchain installed on
+your system in some other way as well (e.g. the system package manager). Otherwise, the `rustup target add...`
+command may not install the target for the correct copy of Rust.)
 
 ## Features
 
@@ -95,7 +101,7 @@ Hello, world!
   standards process all along the way too.
 
 [Wasmtime]: https://github.com/bytecodealliance/wasmtime
-[Cranelift]: https://github.com/bytecodealliance/wasmtime/blob/main/cranelift/README.md
+[Cranelift]: https://cranelift.dev/
 [Google's OSS Fuzz]: https://google.github.io/oss-fuzz/
 [security policy]: https://bytecodealliance.org/security
 [RFC process]: https://github.com/bytecodealliance/rfcs
@@ -103,7 +109,7 @@ Hello, world!
 [Secure]: https://docs.wasmtime.dev/security.html
 [Configurable]: https://docs.rs/wasmtime/latest/wasmtime/struct.Config.html
 [WASI]: https://docs.rs/wasmtime-wasi/latest/wasmtime_wasi/
-[Standards Compliant]: https://docs.wasmtime.dev/stability-wasm-proposals-support.html
+[Standards Compliant]: https://docs.wasmtime.dev/stability-tiers.html
 
 ## Language Support
 
@@ -123,9 +129,10 @@ Languages supported by the Bytecode Alliance:
 Languages supported by the community:
 
 * **[Elixir]** - the [`wasmex` hex package]
+* **Perl** - the [`Wasm` Perl package's `Wasm::Wasmtime`]
 
 [Rust]: https://bytecodealliance.github.io/wasmtime/lang-rust.html
-[C]: https://bytecodealliance.github.io/wasmtime/examples-c-embed.html
+[C]: https://bytecodealliance.github.io/wasmtime/lang-c.html
 [`wasmtime` crate]: https://crates.io/crates/wasmtime
 [c-headers]: https://bytecodealliance.github.io/wasmtime/c-api/
 [Python]: https://bytecodealliance.github.io/wasmtime/lang-python.html
@@ -141,6 +148,7 @@ Languages supported by the community:
 [`wasmtime` gem]: https://rubygems.org/gems/wasmtime
 [Elixir]: https://docs.wasmtime.dev/lang-elixir.html
 [`wasmex` hex package]: https://hex.pm/packages/wasmex
+[`Wasm` Perl package's `Wasm::Wasmtime`]: https://metacpan.org/pod/Wasm::Wasmtime
 
 ## Documentation
 

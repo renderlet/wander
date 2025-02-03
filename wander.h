@@ -185,6 +185,8 @@ public:
 
 	virtual const RenderTree* GetRenderTree(ObjectID tree_id) = 0;
 	virtual void DestroyRenderTree(ObjectID tree_id) = 0;
+
+	virtual void Unload(ObjectID renderlet_id) = 0;
 };
 
 

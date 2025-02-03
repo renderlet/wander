@@ -22,10 +22,9 @@ extern "C" {
  * Note that this function is preferred over #wasm_memorytype_new for
  * compatibility with the memory64 proposal.
  */
-WASM_API_EXTERN wasm_memorytype_t *wasmtime_memorytype_new(uint64_t min,
-                                                           bool max_present,
-                                                           uint64_t max,
-                                                           bool is_64);
+WASM_API_EXTERN wasm_memorytype_t *
+wasmtime_memorytype_new(uint64_t min, bool max_present, uint64_t max,
+                        bool is_64, bool shared);
 
 /**
  * \brief Returns the minimum size, in pages, of the specified memory type.
@@ -53,6 +52,11 @@ WASM_API_EXTERN bool wasmtime_memorytype_maximum(const wasm_memorytype_t *ty,
  * \brief Returns whether this type of memory represents a 64-bit memory.
  */
 WASM_API_EXTERN bool wasmtime_memorytype_is64(const wasm_memorytype_t *ty);
+
+/**
+ * \brief Returns whether this type of memory represents a shared memory.
+ */
+WASM_API_EXTERN bool wasmtime_memorytype_isshared(const wasm_memorytype_t *ty);
 
 /**
  * \brief Creates a new WebAssembly linear memory
