@@ -316,6 +316,8 @@ public:  // TODO: Replace with std::span
 	virtual ObjectID UpdateVector(int length, uint8_t data[], ObjectID buffer_id) = 0;
 
 	virtual void DrawTriangleList(ObjectID buffer_id, int offset, int length, unsigned int stride) = 0;
+	virtual void DrawTriangleListMultiBuffer(ObjectID buffer_id, int offset, int length, unsigned int stride,
+		ObjectID material_buffer_id, unsigned int material_stride) = 0;
 
 	virtual void DrawVector(ObjectID buffer_id, int slot, int width, int height) = 0;
 };
@@ -346,6 +348,8 @@ public:
 	ObjectID UpdateVector(int length, uint8_t data[], ObjectID buffer_id) override;
 
 	void DrawTriangleList(ObjectID buffer_id, int offset, int length, unsigned int stride) override;
+	void DrawTriangleListMultiBuffer(ObjectID buffer_id, int offset, int length, unsigned int stride,
+		ObjectID material_buffer_id, unsigned int material_stride) override;
 
 	void DrawVector(ObjectID buffer_id, int slot, int width, int height) override;
 	
@@ -389,6 +393,8 @@ public:
 	ObjectID UpdateVector(int length, uint8_t data[], ObjectID buffer_id) override;
 
 	void DrawTriangleList(ObjectID buffer_id, int offset, int length, unsigned int stride) override;
+	void DrawTriangleListMultiBuffer(ObjectID buffer_id, int offset, int length, unsigned int stride,
+		ObjectID material_buffer_id, unsigned int material_stride) override;
 
 	void DrawVector(ObjectID buffer_id, int slot, int width, int height) override;
 
@@ -457,6 +463,7 @@ public:
 private:
 
 	ObjectID BuildVector(uint32_t length, uint8_t *data, ObjectID tree_id);
+	ObjectID BuildVertexWithMaterial(uint8_t* output);
 	void CreatePooledBuffer(uint32_t length, uint8_t *data, ObjectID tree_id);
 
 #ifndef __EMSCRIPTEN__

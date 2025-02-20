@@ -26,7 +26,8 @@ enum class BufferType
 {
 	Vertex,
 	Index,
-	Texture2D
+	Texture2D,
+	DynamicMaterial
 };
 
 enum class BufferFormat
@@ -105,10 +106,16 @@ class RenderTreeNode
 {
 public:
 	RenderTreeNode(ObjectID buffer_id, const BufferType& buffer_type, const std::string& metadata, int offset, int length) :
-		m_buffer_id(buffer_id), m_buffer_type(buffer_type), m_metadata(metadata),
+		m_buffer_id(buffer_id), m_material_buffer_id(-1), m_buffer_type(buffer_type), m_metadata(metadata),
+		m_offset(offset), m_length(length) { }
+
+	RenderTreeNode(ObjectID buffer_id, ObjectID material_buffer_id, const BufferType& buffer_type, const std::string& metadata, int offset, int length) :
+		m_buffer_id(buffer_id), m_material_buffer_id(material_buffer_id), m_buffer_type(buffer_type), m_metadata(metadata),
 		m_offset(offset), m_length(length) { }
 
 	void RenderFixedStride(IRuntime* runtime, unsigned int stride) const;
+
+	void RenderFixedStrideWithMaterial(IRuntime *runtime, unsigned int stride, unsigned int material_stride) const;
 
 	void RenderVector(IRuntime *runtime, int slot, int width, int height) const;
 
@@ -129,6 +136,7 @@ public:
 
 private:
 	ObjectID m_buffer_id;
+	ObjectID m_material_buffer_id;
 	BufferType m_buffer_type;
 	std::string m_metadata;
 	int m_offset;

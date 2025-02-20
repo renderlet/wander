@@ -368,7 +368,7 @@ ObjectID PalD3D11::CreateBuffer(BufferDescriptor desc, int length, uint8_t data[
 {
 	m_buffers.emplace_back(nullptr);
 
-	D3D11_BUFFER_DESC vbd;
+	D3D11_BUFFER_DESC vbd = {};
 	vbd.Usage = D3D11_USAGE_IMMUTABLE;
 	vbd.ByteWidth = length;
 	vbd.CPUAccessFlags = 0;
@@ -386,6 +386,11 @@ ObjectID PalD3D11::CreateBuffer(BufferDescriptor desc, int length, uint8_t data[
 		break;
 	case BufferType::Texture2D:
 		exit_with_error("Texture2D not supported in D3D11 Buffers", nullptr, nullptr);
+		break;
+	case BufferType::DynamicMaterial:
+		vbd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+		vbd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+		vbd.Usage = D3D11_USAGE_DYNAMIC;
 		break;
 	}
 
@@ -526,6 +531,21 @@ void PalD3D11::DrawTriangleList(ObjectID buffer_id, int offset, int length, unsi
 
 	m_device_context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	m_device_context->IASetVertexBuffers(0, 1, &m_buffers[buffer_id], &strides, &offsets);
+	m_device_context->Draw(length, offset);
+}
+
+void PalD3D11::DrawTriangleListMultiBuffer(ObjectID buffer_id, int offset, int length,
+	unsigned int stride, ObjectID material_buffer_id, unsigned int material_stride)
+{
+	if (buffer_id < 0 || material_buffer_id < 0)
+		return;
+
+	ID3D11Buffer* const buffers[] = {m_buffers[buffer_id], m_buffers[material_buffer_id]};
+	const UINT strides[] = {stride, material_stride};
+	constexpr UINT offsets[] = {0, 0};
+
+	m_device_context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	m_device_context->IASetVertexBuffers(0, 2, buffers, strides, offsets);
 	m_device_context->Draw(length, offset);
 }
 
@@ -778,9 +798,22 @@ void PalOpenGL::DrawTriangleList(ObjectID buffer_id, int offset, int length, uns
 	glBindVertexArray(0);
 }
 
+void PalOpenGL::DrawTriangleListMultiBuffer(ObjectID buffer_id, int offset, int length,
+	unsigned int stride, ObjectID material_buffer_id,unsigned int material_stride)
+{
+	DrawTriangleList(buffer_id, offset, length, stride);
+}
+
 void RenderTreeNode::RenderFixedStride(IRuntime* runtime, unsigned int stride) const
 {
 	static_cast<Runtime*>(runtime)->PalImpl()->DrawTriangleList(m_buffer_id, m_offset, m_length, stride);
+}
+
+void RenderTreeNode::RenderFixedStrideWithMaterial(IRuntime *runtime, unsigned stride, unsigned material_stride) const
+{
+	static_cast<Runtime *>(runtime)->PalImpl()->DrawTriangleListMultiBuffer(
+		m_buffer_id, m_offset, m_length, stride, m_material_buffer_id, material_stride
+	);
 }
 
 void RenderTreeNode::RenderVector(IRuntime *runtime, int slot, int width, int height) const
@@ -1001,6 +1034,50 @@ ObjectID wander::Runtime::BuildVector(uint32_t length, uint8_t *data, ObjectID t
 	return m_render_trees.size() - 1;
 }
 
+ObjectID wander::Runtime::BuildVertexWithMaterial(uint8_t* output)
+{
+	BufferDescriptor desc{BufferType::Vertex};
+
+	// +0 is version
+	auto vert_length = *reinterpret_cast<uint32_t *>(output + sizeof(uint32_t));
+	auto vert_format = *reinterpret_cast<uint32_t *>(output + 2 * sizeof(uint32_t));
+	auto verts = output + 3 * sizeof(uint32_t);
+
+	auto id = m_pal->CreateBuffer(desc, vert_length, verts);
+
+	auto colors_length = *reinterpret_cast<uint32_t*>(verts + vert_length);
+	auto colors = verts + vert_length + 4;
+	desc = BufferDescriptor{BufferType::DynamicMaterial};
+
+	auto material_id = m_pal->CreateBuffer(desc, colors_length, colors);
+
+
+	auto mat_length = *reinterpret_cast<uint32_t *>(colors + colors_length);
+	auto mats = colors + colors_length + 4;
+	auto mat = std::string(mats, mats + mat_length);
+
+	std::vector<RenderTreeNode> nodes;
+
+	// TODO - binary going to be more efficient
+	std::string line;
+	std::istringstream ss(mat);
+	while (std::getline(ss, line))
+	{
+		auto values = split_fixed<5>(',', line);
+
+		int VertexOffset = atoi(values[1].data());
+		int VertexLength = atoi(values[2].data());
+
+		auto node = RenderTreeNode{id, material_id, BufferType::Vertex, line, VertexOffset, VertexLength};
+
+		nodes.push_back(node);
+	}
+
+	m_render_trees.push_back(std::make_unique<RenderTree>(nodes));
+
+	return m_render_trees.size() - 1;
+}
+
 void Runtime::CreatePooledBuffer(uint32_t length, uint8_t *data, ObjectID tree_id)
 {
 	auto offset = 0;
@@ -1093,14 +1170,18 @@ ObjectID Runtime::Render(const ObjectID renderlet_id, ObjectID tree_id, bool poo
 	auto vert_format = *reinterpret_cast<uint32_t *>(output + 2 * sizeof(uint32_t));
 	auto verts = output + 3 * sizeof(uint32_t);
 
-	if (vert_format == 3)
-	{
-		desc = {BufferType::Index};
-	}
 
 	if (vert_format == 2)
 	{
 		return BuildVector(vert_length, verts, tree_id);
+	}
+	if (vert_format == 3)
+	{
+		desc = {BufferType::Index};
+	}
+	if (vert_format == 4)
+	{
+		return BuildVertexWithMaterial(output);
 	}
 
 	auto id = pool ? -1 : m_pal->CreateBuffer(desc, vert_length, verts);
