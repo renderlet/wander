@@ -308,12 +308,13 @@ public:
 class Pal : public IPal
 {
 public:  // TODO: Replace with std::span
-	virtual ObjectID CreateBuffer(BufferDescriptor desc, int length, uint8_t data[]) = 0;
-	virtual ObjectID CreateTexture(BufferDescriptor desc, int length, uint8_t data[]) = 0;
+	virtual ObjectID CreateBuffer(BufferDescriptor desc, int length, const uint8_t data[]) = 0;
+	virtual ObjectID CreateTexture(BufferDescriptor desc, int length, const uint8_t data[]) = 0;
+	virtual void UpdateBuffer(ObjectID buffer_id, int length, const uint8_t data[]) = 0;
 	virtual void DeleteBuffer(ObjectID buffer_id) = 0;
 
-	virtual ObjectID CreateVector(int length, uint8_t data[]) = 0;
-	virtual ObjectID UpdateVector(int length, uint8_t data[], ObjectID buffer_id) = 0;
+	virtual ObjectID CreateVector(int length, const uint8_t data[]) = 0;
+	virtual ObjectID UpdateVector(int length, const uint8_t data[], ObjectID buffer_id) = 0;
 
 	virtual void DrawTriangleList(ObjectID buffer_id, int offset, int length, unsigned int stride) = 0;
 	virtual void DrawTriangleListMultiBuffer(ObjectID buffer_id, int offset, int length, unsigned int stride,
@@ -340,12 +341,13 @@ public:
 		return EPalType::D3D11;
 	}
 
-	ObjectID CreateBuffer(BufferDescriptor desc, int length, uint8_t data[]) override;
-	ObjectID CreateTexture(BufferDescriptor desc, int length, uint8_t data[]) override;
+	ObjectID CreateBuffer(BufferDescriptor desc, int length, const uint8_t data[]) override;
+	ObjectID CreateTexture(BufferDescriptor desc, int length, const uint8_t data[]) override;
+	void UpdateBuffer(ObjectID buffer_id, int length, const uint8_t data[]) override;
 	void DeleteBuffer(ObjectID buffer_id) override;
 
-	ObjectID CreateVector(int length, uint8_t data[]) override;
-	ObjectID UpdateVector(int length, uint8_t data[], ObjectID buffer_id) override;
+	ObjectID CreateVector(int length, const uint8_t data[]) override;
+	ObjectID UpdateVector(int length, const uint8_t data[], ObjectID buffer_id) override;
 
 	void DrawTriangleList(ObjectID buffer_id, int offset, int length, unsigned int stride) override;
 	void DrawTriangleListMultiBuffer(ObjectID buffer_id, int offset, int length, unsigned int stride,
@@ -385,12 +387,13 @@ public:
 		return EPalType::OpenGL;
 	}
 
-	ObjectID CreateBuffer(BufferDescriptor desc, int length, uint8_t data[]) override;
-	ObjectID CreateTexture(BufferDescriptor desc, int length, uint8_t data[]) override;
+	ObjectID CreateBuffer(BufferDescriptor desc, int length, const uint8_t data[]) override;
+	ObjectID CreateTexture(BufferDescriptor desc, int length, const uint8_t data[]) override;
+	void UpdateBuffer(ObjectID buffer_id, int length, const uint8_t data[]) override;
 	void DeleteBuffer(ObjectID buffer_id) override;
 
-	ObjectID CreateVector(int length, uint8_t data[]) override;
-	ObjectID UpdateVector(int length, uint8_t data[], ObjectID buffer_id) override;
+	ObjectID CreateVector(int length, const uint8_t data[]) override;
+	ObjectID UpdateVector(int length, const uint8_t data[], ObjectID buffer_id) override;
 
 	void DrawTriangleList(ObjectID buffer_id, int offset, int length, unsigned int stride) override;
 	void DrawTriangleListMultiBuffer(ObjectID buffer_id, int offset, int length, unsigned int stride,
@@ -445,6 +448,7 @@ public:
 
 	ObjectID Render(ObjectID renderlet_id, ObjectID tree_id = -1, bool pool = false) override;
 	const float* const ExecuteFloat4(ObjectID renderlet_id, const std::string& function) override;
+	void ExecuteMaterial(ObjectID renderlet_id, const RenderTreeNode* node, const std::string &function) override;
 
 	// void UploadBufferPool(ObjectID pool_id);
 	void UploadBufferPool(unsigned int stride) override;

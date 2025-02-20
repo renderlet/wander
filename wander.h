@@ -129,6 +129,11 @@ public:
 		return m_buffer_id;
 	}
 
+	ObjectID MaterialBufferID() const
+	{
+		return m_material_buffer_id;
+	}
+
 	BufferType Type() const
 	{
 		return m_buffer_type;
@@ -188,6 +193,8 @@ public:
 	virtual ObjectID Render(ObjectID renderlet_id, ObjectID tree_id = -1, bool pool = false) = 0;
 
 	virtual const float* const ExecuteFloat4(ObjectID renderlet_id, const std::string &function) = 0;
+
+	virtual void ExecuteMaterial(ObjectID renderlet_id, const RenderTreeNode* node, const std::string &function) = 0;
 
 	virtual void UploadBufferPool(unsigned int stride) = 0;
 

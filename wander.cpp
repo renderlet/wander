@@ -364,7 +364,7 @@ PalD3D11::PalD3D11(ID3D11Device* device, ID3D11DeviceContext* context, IDXGISwap
 
 PalD3D11::~PalD3D11() {};
 
-ObjectID PalD3D11::CreateBuffer(BufferDescriptor desc, int length, uint8_t data[])
+ObjectID PalD3D11::CreateBuffer(BufferDescriptor desc, int length, const uint8_t data[])
 {
 	m_buffers.emplace_back(nullptr);
 
@@ -400,7 +400,7 @@ ObjectID PalD3D11::CreateBuffer(BufferDescriptor desc, int length, uint8_t data[
 	return m_buffers.size() - 1;
 }
 
-ObjectID PalD3D11::CreateTexture(BufferDescriptor desc, int length, uint8_t data[])
+ObjectID PalD3D11::CreateTexture(BufferDescriptor desc, int length, const uint8_t data[])
 {
 	m_textures.emplace_back(nullptr);
 
@@ -491,13 +491,23 @@ ObjectID PalD3D11::CreateTexture(BufferDescriptor desc, int length, uint8_t data
 	return m_textures.size() - 1;
 }
 
+void PalD3D11::UpdateBuffer(ObjectID buffer_id, int length, const uint8_t data[])
+{
+	D3D11_MAPPED_SUBRESOURCE mappedResource;
+	ZeroMemory(&mappedResource, sizeof(D3D11_MAPPED_SUBRESOURCE));
+
+	m_device_context->Map(m_buffers[buffer_id], 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+	memcpy(mappedResource.pData, data, length);
+	m_device_context->Unmap(m_buffers[buffer_id], 0);
+}
+
 void PalD3D11::DeleteBuffer(ObjectID buffer_id)
 {
 	if (buffer_id != -1)
 		m_buffers[buffer_id]->Release();
 }
 
-ObjectID PalD3D11::CreateVector(int length, uint8_t data[])
+ObjectID PalD3D11::CreateVector(int length, const uint8_t data[])
 {
 #ifdef RLT_RIVE
 	m_vector_commands.emplace_back(VectorLoader::Read(data, length));
@@ -511,7 +521,7 @@ ObjectID PalD3D11::CreateVector(int length, uint8_t data[])
 #endif
 }
 
-ObjectID PalD3D11::UpdateVector(int length, uint8_t data[], ObjectID buffer_id)
+ObjectID PalD3D11::UpdateVector(int length, const uint8_t data[], ObjectID buffer_id)
 {
 #ifdef RLT_RIVE
 	m_vector_commands[buffer_id] = VectorLoader::Read(data, length);
@@ -663,7 +673,7 @@ void PalD3D11::DrawVector(ObjectID buffer_id, int slot, int width, int height)
 
 #endif
 
-ObjectID PalOpenGL::CreateBuffer(BufferDescriptor desc, int length, uint8_t data[])
+ObjectID PalOpenGL::CreateBuffer(BufferDescriptor desc, int length, const uint8_t data[])
 {
 	switch (desc.Type())
 	{
@@ -691,7 +701,7 @@ ObjectID PalOpenGL::CreateBuffer(BufferDescriptor desc, int length, uint8_t data
 	return m_vaos.size() - 1;
 }
 
-ObjectID PalOpenGL::CreateTexture(BufferDescriptor desc, int length, uint8_t data[])
+ObjectID PalOpenGL::CreateTexture(BufferDescriptor desc, int length, const uint8_t data[])
 {
 	GLenum format{};
 	GLenum type{};
@@ -770,18 +780,23 @@ ObjectID PalOpenGL::CreateTexture(BufferDescriptor desc, int length, uint8_t dat
 	return m_texs.size() - 1;
 }
 
+void PalOpenGL::UpdateBuffer(ObjectID buffer_id, int length, const uint8_t data[])
+{
+	return;
+}
+
 void PalOpenGL::DeleteBuffer(ObjectID buffer_id)
 {
 	glDeleteVertexArrays(1, &m_vaos[buffer_id]);
 	glDeleteBuffers(1, &m_vbos[buffer_id]);
 }
 
-ObjectID PalOpenGL::CreateVector(int length, uint8_t data[])
+ObjectID PalOpenGL::CreateVector(int length, const uint8_t data[])
 {
 	return -1;
 }
 
-ObjectID PalOpenGL::UpdateVector(int length, uint8_t data[], ObjectID buffer_id)
+ObjectID PalOpenGL::UpdateVector(int length, const uint8_t data[], ObjectID buffer_id)
 {
 	return -1;
 }
@@ -1269,6 +1284,13 @@ const float* const Runtime::ExecuteFloat4(ObjectID renderlet_id, const std::stri
 	return reinterpret_cast<float*>(mem + offset);
 }
 
+
+void Runtime::ExecuteMaterial(ObjectID renderlet_id, const RenderTreeNode* node, const std::string &function)
+{
+	const auto output = reinterpret_cast<const uint32_t*>(ExecuteFloat4(renderlet_id, function));
+
+	m_pal->UpdateBuffer(node->MaterialBufferID(), output[0], reinterpret_cast<const uint8_t*>(output) + sizeof(uint32_t));
+}
 
 void Runtime::UploadBufferPool(unsigned int stride)
 {
