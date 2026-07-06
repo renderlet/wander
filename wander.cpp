@@ -333,6 +333,7 @@ auto split_fixed(char separator, std::string_view input)
 			const bool is_last_part = &part == &(results.back());
 			if (!is_last_part)
 				throw std::invalid_argument("not enough parts to split");
+			return results;
 		}
 		auto delim = std::find(current, End, separator);
 		part = {&*current, size_t(delim - current)};
@@ -536,11 +537,12 @@ void PalD3D11::DrawTriangleList(ObjectID buffer_id, int offset, int length, unsi
 	if (buffer_id < 0)
 		return;
 
-	const UINT strides = stride;
-	constexpr UINT offsets = 0;
+	ID3D11Buffer *const buffers[] = {m_buffers[buffer_id], nullptr};
+	const UINT strides[] = {stride, 0};
+	const UINT offsets[] = {0, 0};
 
 	m_device_context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	m_device_context->IASetVertexBuffers(0, 1, &m_buffers[buffer_id], &strides, &offsets);
+	m_device_context->IASetVertexBuffers(0, 2, buffers, strides, offsets);
 	m_device_context->Draw(length, offset);
 }
 
@@ -552,11 +554,11 @@ void PalD3D11::DrawTriangleListMultiBuffer(ObjectID buffer_id, int offset, int l
 
 	ID3D11Buffer* const buffers[] = {m_buffers[buffer_id], m_buffers[material_buffer_id]};
 	const UINT strides[] = {stride, material_stride};
-	constexpr UINT offsets[] = {0, 0};
+	const UINT offsets[] = {static_cast<UINT>(offset * stride), 0};
 
 	m_device_context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	m_device_context->IASetVertexBuffers(0, 2, buffers, strides, offsets);
-	m_device_context->Draw(length, offset);
+	m_device_context->Draw(length, 0);
 }
 
 void PalD3D11::DrawVector(ObjectID buffer_id, int slot, int width, int height)
@@ -1290,6 +1292,13 @@ void Runtime::ExecuteMaterial(ObjectID renderlet_id, const RenderTreeNode* node,
 	const auto output = reinterpret_cast<const uint32_t*>(ExecuteFloat4(renderlet_id, function));
 
 	m_pal->UpdateBuffer(node->MaterialBufferID(), output[0], reinterpret_cast<const uint8_t*>(output) + sizeof(uint32_t));
+}
+
+void wander::Runtime::ExecuteBuffer(ObjectID renderlet_id, const std::string& function, uint32_t* length, const uint8_t** data)
+{
+	const auto output = reinterpret_cast<const uint32_t *>(ExecuteFloat4(renderlet_id, function));
+	*length = output[0];
+	*data = reinterpret_cast<const uint8_t*>(&output[1]);
 }
 
 void Runtime::UploadBufferPool(unsigned int stride)

@@ -196,6 +196,8 @@ public:
 
 	virtual void ExecuteMaterial(ObjectID renderlet_id, const RenderTreeNode* node, const std::string &function) = 0;
 
+	virtual void ExecuteBuffer(ObjectID renderlet_id, const std::string& function, uint32_t* length, const uint8_t** data) = 0;
+
 	virtual void UploadBufferPool(unsigned int stride) = 0;
 
 	virtual const RenderTree* GetRenderTree(ObjectID tree_id) = 0;

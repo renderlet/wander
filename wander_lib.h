@@ -433,7 +433,7 @@ public:
 		} Value;
 	};
 
-	Runtime(Pal *pal) : m_pal(pal)
+	Runtime(Pal* pal) : m_pal(pal)
 	{
 	}
 
@@ -448,12 +448,13 @@ public:
 
 	ObjectID Render(ObjectID renderlet_id, ObjectID tree_id = -1, bool pool = false) override;
 	const float* const ExecuteFloat4(ObjectID renderlet_id, const std::string& function) override;
-	void ExecuteMaterial(ObjectID renderlet_id, const RenderTreeNode* node, const std::string &function) override;
+	void ExecuteMaterial(ObjectID renderlet_id, const RenderTreeNode* node, const std::string& function) override;
+	void ExecuteBuffer(ObjectID renderlet_id, const std::string& function, uint32_t* length, const uint8_t** data) override;
 
 	// void UploadBufferPool(ObjectID pool_id);
 	void UploadBufferPool(unsigned int stride) override;
 
-	const RenderTree *GetRenderTree(ObjectID tree_id) override;
+	const RenderTree* GetRenderTree(ObjectID tree_id) override;
 	void DestroyRenderTree(ObjectID tree_id) override;
 
 	void Release() override;
@@ -466,9 +467,9 @@ public:
 
 private:
 
-	ObjectID BuildVector(uint32_t length, uint8_t *data, ObjectID tree_id);
+	ObjectID BuildVector(uint32_t length, uint8_t* data, ObjectID tree_id);
 	ObjectID BuildVertexWithMaterial(uint8_t* output);
-	void CreatePooledBuffer(uint32_t length, uint8_t *data, ObjectID tree_id);
+	void CreatePooledBuffer(uint32_t length, uint8_t* data, ObjectID tree_id);
 
 #ifndef __EMSCRIPTEN__
 	struct WasmtimeContext
